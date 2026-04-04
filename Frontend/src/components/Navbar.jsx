@@ -91,7 +91,7 @@ export default function Navbar() {
                  Sign In
                </Link>
                <Link to="/sign-up" className="ml-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full text-sm font-bold shadow-lg shadow-indigo-500/20 transition-all hover:scale-105">
-                 Get Started
+                 Sign Up
                </Link>
             </>
           )}

@@ -21,10 +21,10 @@ const Home = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-black text-gray-900 dark:text-white overflow-x-hidden font-sans selection:bg-indigo-500 selection:text-white pt-16">
+    <div className="min-h-screen bg-gray-50 dark:bg-black text-gray-900 dark:text-white overflow-x-hidden font-sans selection:bg-indigo-500 selection:text-white pt-2">
       
       {/* Hero Section */}
-      <div className="relative pt-20 pb-20 lg:pt-32 lg:pb-32 px-6">
+      <div className="relative pt-2 pb-20 lg:pt-32 lg:pb-22 px-6">
         {/* Background Gradients */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-indigo-200/40 dark:bg-indigo-600/20 rounded-full blur-[120px] pointer-events-none" />
         <div className="absolute bottom-0 right-0 w-[800px] h-[600px] bg-purple-200/40 dark:bg-purple-600/10 rounded-full blur-[120px] pointer-events-none" />
@@ -35,7 +35,7 @@ const Home = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-6 leading-tight text-gray-900 dark:text-white"
+            className="text-5xl md:text-7xl lg:text-7xl font-bold tracking-tight mb-6 leading-tight text-gray-900 dark:text-white"
           >
             Master your studies with <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 dark:from-indigo-400 dark:via-purple-400 dark:to-pink-400">Superhuman AI.</span>
