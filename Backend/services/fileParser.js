@@ -3,12 +3,21 @@ const mammoth = require('mammoth');          // DOCX extraction
 const Tesseract = require('tesseract.js');   // OCR fallback
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 
-let pdfPoppler = null;
-try {
-  pdfPoppler = require('pdf-poppler'); // PDF to Image conversion for scanned PDFs
-} catch (err) {
-  console.warn('pdf-poppler unavailable; scanned PDF OCR fallback is disabled.');
+const POPPLER_SUPPORTED_PLATFORMS = new Set(['win32', 'darwin']);
+
+function loadPdfPoppler() {
+  if (!POPPLER_SUPPORTED_PLATFORMS.has(os.platform())) {
+    return null;
+  }
+
+  try {
+    return require('pdf-poppler'); // PDF to Image conversion for scanned PDFs
+  } catch (err) {
+    console.warn('pdf-poppler unavailable; scanned PDF OCR fallback is disabled.');
+    return null;
+  }
 }
 
 class FileParserService {
@@ -105,8 +114,9 @@ class FileParserService {
    * SPECIALIZED FALLBACK FOR PDFs (Uses pdf-poppler)
    */
   async ocrPdfFallback(buffer) {
+    const pdfPoppler = loadPdfPoppler();
     if (!pdfPoppler) {
-      console.warn('Skipping scanned PDF OCR fallback because pdf-poppler is not installed.');
+      console.warn('Skipping scanned PDF OCR fallback because pdf-poppler is unavailable on this platform.');
       return "";
     }
 
