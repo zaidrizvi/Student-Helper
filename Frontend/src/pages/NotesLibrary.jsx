@@ -58,7 +58,7 @@ export default function NotesLibrary() {
 
   return (
     <PageShell>
-      <section className="space-y-8">
+      <section className="space-y-6">
         <PageHeader
           eyebrow="Saved material"
           title="Your note library"
@@ -71,7 +71,7 @@ export default function NotesLibrary() {
           }
         />
 
-        <Panel className="p-5 sm:p-6">
+        <Panel className="p-4 sm:p-6">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <SectionLabel>Browse and filter</SectionLabel>
@@ -91,7 +91,7 @@ export default function NotesLibrary() {
         </Panel>
       </section>
 
-      <section className="mt-8">
+      <section className="mt-6">
         {loading ? (
           <Panel className="flex min-h-[18rem] items-center justify-center p-6">
             <div className="flex flex-col items-center gap-4">
@@ -100,7 +100,7 @@ export default function NotesLibrary() {
             </div>
           </Panel>
         ) : filteredNotes.length ? (
-          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {filteredNotes.map((note, index) => (
               <motion.button
                 key={note._id}
@@ -112,7 +112,7 @@ export default function NotesLibrary() {
                 onClick={() => navigate(`/notes/${note._id}`)}
                 className="text-left"
               >
-                <Panel className="flex h-full flex-col p-6 transition-colors hover:border-sky-300 dark:hover:border-sky-700">
+                <Panel className="flex h-full flex-col p-4 sm:p-6 transition-colors hover:border-sky-300 dark:hover:border-sky-700">
                   <div className="flex items-start justify-between gap-3">
                     <span className="flex h-12 w-12 items-center justify-center rounded-3xl bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300">
                       <FileText className="h-5 w-5" />
@@ -123,7 +123,7 @@ export default function NotesLibrary() {
                   </div>
 
                   <div className="mt-5 flex-1">
-                    <h3 className="font-display text-xl font-bold text-slate-950 dark:text-white">
+                    <h3 className="font-display text-lg font-bold text-slate-950 dark:text-white sm:text-xl">
                       {note.fileName}
                     </h3>
                     <p className="mt-3 line-clamp-3 text-sm leading-7 text-slate-600 dark:text-slate-300">

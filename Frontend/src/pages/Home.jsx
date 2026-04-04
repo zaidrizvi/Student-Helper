@@ -50,7 +50,7 @@ export default function Home() {
   }
 
   return (
-    <PageShell contentClassName="pt-28 pb-20">
+    <PageShell contentClassName="pt-24 pb-16 sm:pt-28 sm:pb-20">
       <section className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
         <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
           <PageHeader
@@ -79,7 +79,7 @@ export default function Home() {
             }
           />
 
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
             <StatPill icon={FileText} label="Input types" value="PDF, DOCX, TXT, images" />
             <StatPill icon={LayoutPanelTop} label="Output" value="Study guides, quizzes, share pages" />
             <StatPill icon={BookOpenText} label="Audience" value="Students who need clarity fast" />
@@ -141,7 +141,7 @@ export default function Home() {
         </motion.div>
       </section>
 
-      <section className="mt-16 grid gap-5 md:grid-cols-3">
+      <section className="mt-12 grid gap-4 md:grid-cols-3 sm:mt-16">
         {featureCards.map(({ title, description, icon: Icon }, index) => (
           <Panel
             key={title}
@@ -160,8 +160,8 @@ export default function Home() {
         ))}
       </section>
 
-      <section className="mt-16">
-        <Panel className="overflow-hidden p-8 sm:p-10">
+      <section className="mt-12 sm:mt-16">
+        <Panel className="overflow-hidden p-5 sm:p-10">
           <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
             <div className="space-y-4">
               <SectionLabel>How students use it</SectionLabel>

@@ -60,17 +60,17 @@ export default function Navbar() {
 
   return (
     <>
-      <header className="fixed inset-x-0 top-0 z-50 border-b border-white/75 bg-white/78 px-4 py-3 shadow-[0_20px_60px_-42px_rgba(15,23,42,0.45)] backdrop-blur-xl dark:border-slate-800/90 dark:bg-slate-950/80 sm:px-6 lg:px-8">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-1 sm:px-0">
-          <Link to="/" className="flex items-center gap-3">
-            <span className="flex h-11 w-11 items-center justify-center rounded-3xl bg-sky-600 text-white shadow-[0_16px_34px_-18px_rgba(2,132,199,0.7)]">
+      <header className="fixed inset-x-0 top-0 z-50 border-b border-white/75 bg-white/78 px-3 py-2.5 shadow-[0_20px_60px_-42px_rgba(15,23,42,0.45)] backdrop-blur-xl dark:border-slate-800/90 dark:bg-slate-950/80 sm:px-6 sm:py-3 lg:px-8">
+        <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-3 px-0 sm:h-16">
+          <Link to="/" className="flex min-w-0 items-center gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-3xl bg-sky-600 text-white shadow-[0_16px_34px_-18px_rgba(2,132,199,0.7)] sm:h-11 sm:w-11">
               <BrainCircuit className="h-5 w-5" />
             </span>
-            <span className="hidden sm:block">
-              <span className="font-display block text-lg font-bold tracking-tight text-slate-950 dark:text-white">
+            <span className="min-w-0">
+              <span className="font-display block truncate text-base font-bold tracking-tight text-slate-950 dark:text-white sm:text-lg">
                 ScholarAI
               </span>
-              <span className="block text-xs text-slate-500 dark:text-slate-400">
+              <span className="hidden text-xs text-slate-500 dark:text-slate-400 sm:block">
                 Study smarter, not louder
               </span>
             </span>
@@ -150,17 +150,17 @@ export default function Navbar() {
             )}
           </div>
 
-          <div className="flex items-center gap-2 md:hidden">
+          <div className="flex shrink-0 items-center gap-2 md:hidden">
             <button
               onClick={() => setIsDark((current) => !current)}
-              className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white/90 text-slate-500 dark:border-slate-800 dark:bg-slate-950/85 dark:text-slate-300"
+              className="flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white/90 text-slate-500 dark:border-slate-800 dark:bg-slate-950/85 dark:text-slate-300"
               aria-label="Toggle color theme"
             >
               {isDark ? <Sun className="h-5 w-5 text-amber-400" /> : <MoonStar className="h-5 w-5 text-sky-600" />}
             </button>
             <button
               onClick={() => setIsMobileMenuOpen((current) => !current)}
-              className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white/90 text-slate-700 dark:border-slate-800 dark:bg-slate-950/85 dark:text-slate-100"
+              className="flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white/90 text-slate-700 dark:border-slate-800 dark:bg-slate-950/85 dark:text-slate-100"
               aria-label="Open navigation"
             >
               {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -183,7 +183,7 @@ export default function Navbar() {
               initial={{ opacity: 0, y: -12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
-              className="fixed inset-x-4 top-24 z-50 rounded-[28px] border border-white/80 bg-white/94 p-5 shadow-[0_32px_80px_-48px_rgba(15,23,42,0.65)] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/96 md:hidden"
+              className="fixed inset-x-3 top-20 z-50 max-h-[calc(100vh-5.5rem)] overflow-y-auto rounded-[28px] border border-white/80 bg-white/94 p-4 shadow-[0_32px_80px_-48px_rgba(15,23,42,0.65)] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/96 md:hidden sm:inset-x-4 sm:top-24 sm:p-5"
             >
               {isAuthenticated ? (
                 <div className="mb-5 rounded-3xl bg-slate-50 p-4 dark:bg-slate-900">

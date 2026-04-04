@@ -268,21 +268,15 @@ export default function UploadNotes() {
   if (!isAuthenticated) return null;
 
   return (
-    <div className="min-h-screen w-full bg-[#F8FAFC] pt-22 text-slate-800 dark:bg-[#0B0F17] dark:text-slate-100">
-      <div className="mx-auto flex max-w-[1420px] flex-col gap-5 px-4 pb-5 md:px-6">
-        <div className=" px-5 py-3.5 shadow-sm md:px-6 md:py-4">
-          
-
-            
-        </div>
-
-        <main className="flex min-h-[calc(100vh-10rem)] flex-col gap-5 lg:flex-row">
+    <div className="min-h-screen w-full bg-[#F8FAFC] pt-20 text-slate-800 dark:bg-[#0B0F17] dark:text-slate-100 md:pt-22">
+      <div className="mx-auto flex max-w-[1420px] flex-col gap-4 px-4 pb-5 md:px-6">
+        <main className="flex min-h-[calc(100vh-8.5rem)] flex-col gap-4 lg:flex-row">
           <motion.div
             className={`flex min-h-0 flex-1 flex-col overflow-y-auto rounded-[24px] border border-slate-200 bg-white shadow-sm custom-scrollbar dark:border-slate-800 dark:bg-[#0D1320] lg:max-w-[365px] xl:max-w-[390px] ${
               isFocused ? "pointer-events-none opacity-0 lg:-ml-[480px]" : "opacity-100"
             }`}
           >
-            <div className="space-y-5 p-4 lg:p-5">
+            <div className="space-y-4 p-4 lg:p-5">
               <div className="space-y-2">
                 <h2 className="text-lg font-bold text-slate-900 dark:text-white">New Analysis</h2>
                 <p className="text-sm text-slate-500 dark:text-slate-400">Configure your study material below.</p>
@@ -362,7 +356,7 @@ export default function UploadNotes() {
                   <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-[10px] dark:bg-slate-800">2</span>
                   Learning Mode
                 </label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   {MODES.map((m) => (
                     <button
                       key={m.value}
@@ -440,19 +434,17 @@ export default function UploadNotes() {
               isFocused ? "fixed inset-x-4 bottom-4 top-24 z-40 md:inset-x-6" : ""
             }`}
           >
-            <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4 dark:border-slate-800 md:px-6">
-              <div className="flex items-center gap-3">
+            <div className="flex flex-col gap-3 border-b border-slate-100 px-4 py-4 dark:border-slate-800 md:px-6 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex min-w-0 items-center gap-3">
                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-sky-50 text-sky-600 dark:bg-sky-950/40 dark:text-sky-300">
                   <BrainCircuit className="h-5 w-5" />
                 </div>
-                <div>
-                  
-                  <h2 className="mt-2 text-[1.7rem] font-bold tracking-tight text-slate-900 dark:text-white">Analysis workspace</h2>
-                 
+                <div className="min-w-0">
+                  <h2 className="text-[1.35rem] font-bold tracking-tight text-slate-900 dark:text-white sm:text-[1.55rem]">Analysis workspace</h2>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 {geminiOutput && !loading ? (
                   <>
                     <button onClick={handleCopy} className="rounded-xl p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200" title="Copy">
@@ -484,14 +476,14 @@ export default function UploadNotes() {
               </div>
             </div>
 
-            <div ref={summaryRef} className="custom-scrollbar flex-1 overflow-y-auto p-5 md:p-8">
+            <div ref={summaryRef} className="custom-scrollbar flex-1 overflow-y-auto p-4 sm:p-5 md:p-7">
               {!hasStarted && !loading && !geminiOutput ? (
                 <div className="flex h-full flex-col items-center justify-center text-center">
                   <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-3xl bg-slate-100 text-slate-300 dark:bg-slate-900 dark:text-slate-600">
                     <Sparkles className="h-7 w-7" />
                   </div>
-                  <h3 className="text-[2rem] font-bold tracking-tight text-slate-900 dark:text-white">Your study guide will appear here</h3>
-                  <p className="mt-3 max-w-2xl text-sm leading-8 text-slate-500 dark:text-slate-400 md:text-base">
+                  <h3 className="text-[1.5rem] font-bold tracking-tight text-slate-900 dark:text-white sm:text-[1.8rem]">Your study guide will appear here</h3>
+                  <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-500 dark:text-slate-400 md:text-base">
                     Upload a file, choose a learning depth, and generate a structured study guide with clear next steps.
                   </p>
                 </div>
@@ -539,7 +531,7 @@ export default function UploadNotes() {
                   >
                     <div className="flex flex-col items-start justify-between gap-5 md:flex-row md:items-center">
                       <div>
-                        <h3 className="flex items-center gap-2 text-lg font-bold">
+                        <h3 className="flex items-center gap-2 text-base font-bold sm:text-lg">
                           <Sparkles className="h-5 w-5" />
                           Master this topic
                         </h3>
@@ -547,7 +539,7 @@ export default function UploadNotes() {
                       </div>
                       <button
                         onClick={handleStartQuiz}
-                        className="rounded-2xl bg-white px-6 py-2.5 text-sm font-bold text-sky-700 transition-colors hover:bg-sky-50"
+                        className="w-full rounded-2xl bg-white px-6 py-2.5 text-sm font-bold text-sky-700 transition-colors hover:bg-sky-50 sm:w-auto"
                       >
                         Start Quiz
                       </button>
@@ -569,7 +561,7 @@ export default function UploadNotes() {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 30, stiffness: 300 }}
-              className="fixed inset-y-0 right-0 z-[70] flex w-full max-w-[370px] flex-col border-l border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-[#0D1320]"
+              className="fixed inset-y-0 right-0 z-[70] flex w-full max-w-[370px] flex-col border-l border-slate-200 bg-white p-4 shadow-2xl dark:border-slate-800 dark:bg-[#0D1320] sm:p-6"
             >
               <div className="mb-8 flex items-center justify-between">
                 <h3 className="text-xl font-bold text-slate-900 dark:text-white">History</h3>

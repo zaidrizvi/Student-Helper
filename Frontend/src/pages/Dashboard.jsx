@@ -71,14 +71,14 @@ export default function Dashboard() {
   const notesThisWeek = notes.filter((note) => new Date(note.createdAt) > oneWeekAgo).length;
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] px-4 pb-6 pt-22 text-slate-900 dark:bg-[#0B0F17] dark:text-slate-100 md:px-6">
-      <div className="mx-auto max-w-6xl space-y-4">
+    <div className="min-h-screen bg-[#F8FAFC] px-4 pb-6 pt-20 text-slate-900 dark:bg-[#0B0F17] dark:text-slate-100 md:px-6 md:pt-22">
+      <div className="mx-auto max-w-7xl space-y-4">
         <header className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl">
             <span className="inline-flex rounded-full bg-sky-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-sky-700 dark:bg-sky-950/40 dark:text-sky-300">
               {today}
             </span>
-            <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-900 dark:text-white md:text-[3rem]">
+            <h1 className="mt-3 text-[2.35rem] font-bold tracking-tight text-slate-900 dark:text-white sm:text-[2.7rem] md:text-[3rem]">
               Welcome back, <span className="text-sky-500">{firstName}</span>
             </h1>
             <p className="mt-2.5 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">
@@ -89,14 +89,14 @@ export default function Dashboard() {
           <div className="flex flex-col gap-3 sm:flex-row">
             <button
               onClick={() => navigate("/upload-notes")}
-              className="flex items-center justify-center gap-2 rounded-2xl bg-sky-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-sky-500/20 transition-colors hover:bg-sky-700"
+              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-sky-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-sky-500/20 transition-colors hover:bg-sky-700 sm:w-auto"
             >
               <Plus className="h-4 w-4" />
               Upload new note
             </button>
             <button
               onClick={() => navigate("/notes")}
-              className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+              className="flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 sm:w-auto"
             >
               <Library className="h-4 w-4" />
               Open library
@@ -138,7 +138,7 @@ export default function Dashboard() {
                 <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500 dark:bg-slate-800 dark:text-slate-300">
                   Recent Materials
                 </span>
-                <h2 className="mt-3 text-[1.55rem] font-bold tracking-tight text-slate-900 dark:text-white">
+                <h2 className="mt-3 text-[1.35rem] font-bold tracking-tight text-slate-900 dark:text-white sm:text-[1.55rem]">
                   Continue a note you already studied
                 </h2>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">
@@ -201,7 +201,7 @@ export default function Dashboard() {
               <span className="inline-flex rounded-full bg-white/15 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-white">
                 Quick Actions
               </span>
-              <h2 className="mt-3 text-[1.55rem] font-bold tracking-tight">Stay in revision mode.</h2>
+              <h2 className="mt-3 text-[1.35rem] font-bold tracking-tight sm:text-[1.55rem]">Stay in revision mode.</h2>
               <p className="mt-2 text-sm leading-6 text-sky-50">
                 Upload fresh material or revisit your library when you want to turn class notes into something you can actually study from.
               </p>
@@ -224,7 +224,7 @@ export default function Dashboard() {
               <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500 dark:bg-slate-800 dark:text-slate-300">
                 Recent Performance
               </span>
-              <h2 className="mt-3 text-[1.55rem] font-bold tracking-tight text-slate-900 dark:text-white">Quiz feedback at a glance</h2>
+              <h2 className="mt-3 text-[1.35rem] font-bold tracking-tight text-slate-900 dark:text-white sm:text-[1.55rem]">Quiz feedback at a glance</h2>
 
               <div className="mt-4 space-y-2.5">
                 {quizAttempts.length ? (

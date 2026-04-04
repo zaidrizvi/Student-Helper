@@ -162,7 +162,7 @@ export default function ViewNote() {
 
   return (
     <PageShell>
-      <section className="space-y-8">
+      <section className="space-y-6">
         <PageHeader
           eyebrow="Saved note"
           title={note.fileName}
@@ -176,17 +176,17 @@ export default function ViewNote() {
           }
         />
 
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-2.5">
           <div className="rounded-full bg-white px-4 py-2 text-sm font-medium text-slate-600 ring-1 ring-slate-200 dark:bg-slate-950 dark:text-slate-300 dark:ring-slate-800">{getFileBadgeLabel(note.fileType, note.fileName)}</div>
           <div className="rounded-full bg-white px-4 py-2 text-sm font-medium text-slate-600 ring-1 ring-slate-200 dark:bg-slate-950 dark:text-slate-300 dark:ring-slate-800">{formatDate(note.createdAt)}</div>
           <div className="rounded-full bg-white px-4 py-2 text-sm font-medium text-slate-600 ring-1 ring-slate-200 dark:bg-slate-950 dark:text-slate-300 dark:ring-slate-800">{historyCount} saved AI responses</div>
         </div>
       </section>
 
-      <section className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+      <section className="mt-6 grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-6">
           <Panel className="p-3 sm:p-4">
-            <div className="flex flex-wrap gap-2">
+            <div className="grid grid-cols-1 gap-2 sm:flex sm:flex-wrap">
               {[{ id: "ai", label: "AI history", icon: Bot }, { id: "original", label: "Extracted text", icon: Search }].map((tab) => {
                 const Icon = tab.icon;
                 const active = activeTab === tab.id;
@@ -198,12 +198,12 @@ export default function ViewNote() {
           <AnimatePresence mode="wait">
             {activeTab === "ai" ? (
               <motion.div key="ai" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} className="space-y-5">
-                {historyCount ? [...noteHistory].reverse().map((entry, index) => <Panel key={`${entry.createdAt}-${index}`} className="overflow-hidden"><div className="flex flex-col gap-4 border-b border-slate-200 bg-slate-50/80 px-5 py-4 dark:border-slate-800 dark:bg-slate-900/60 sm:flex-row sm:items-start sm:justify-between"><div><SectionLabel>AI response {historyCount - index}</SectionLabel><p className="mt-2 text-sm font-semibold text-slate-900 dark:text-white">{!entry.prompt || entry.prompt === "(No custom prompt)" ? "Standard summary" : entry.prompt}</p><p className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-400">{formatDate(entry.createdAt)}</p></div><button onClick={() => handleCopy(entry.answer, index)} className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300">{copiedId === index ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}</button></div><div className="p-5 sm:p-7"><MarkdownRenderer content={entry.answer} variant="study" />{index === 0 ? <div className="mt-8 rounded-[28px] bg-[linear-gradient(135deg,#0ea5e9,#0284c7)] p-6 text-white shadow-[0_28px_70px_-44px_rgba(14,165,233,0.85)]"><div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between"><div><p className="font-display text-xl font-bold">Turn this guide into recall practice</p><p className="mt-1 text-sm leading-7 text-sky-50/90">Start a quiz from the latest analysis and review weak topics once you finish.</p></div><Button variant="secondary" onClick={handleStartQuiz} className="bg-white text-sky-700 hover:bg-sky-50"><Target className="h-4 w-4" />Start quiz</Button></div></div> : null}</div></Panel>) : <EmptyState icon={Bot} title="No AI summaries saved yet" description="Run an analysis from the upload workspace to build a note history here." action={<Button onClick={() => navigate("/upload-notes")}>Open upload workspace</Button>} />}
+                {historyCount ? [...noteHistory].reverse().map((entry, index) => <Panel key={`${entry.createdAt}-${index}`} className="overflow-hidden"><div className="flex flex-col gap-4 border-b border-slate-200 bg-slate-50/80 px-4 py-4 dark:border-slate-800 dark:bg-slate-900/60 sm:flex-row sm:items-start sm:justify-between sm:px-5"><div><SectionLabel>AI response {historyCount - index}</SectionLabel><p className="mt-2 text-sm font-semibold text-slate-900 dark:text-white">{!entry.prompt || entry.prompt === "(No custom prompt)" ? "Standard summary" : entry.prompt}</p><p className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-400">{formatDate(entry.createdAt)}</p></div><button onClick={() => handleCopy(entry.answer, index)} className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300">{copiedId === index ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}</button></div><div className="p-4 sm:p-7"><MarkdownRenderer content={entry.answer} variant="study" />{index === 0 ? <div className="mt-8 rounded-[28px] bg-[linear-gradient(135deg,#0ea5e9,#0284c7)] p-5 text-white shadow-[0_28px_70px_-44px_rgba(14,165,233,0.85)] sm:p-6"><div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between"><div><p className="font-display text-lg font-bold sm:text-xl">Turn this guide into recall practice</p><p className="mt-1 text-sm leading-7 text-sky-50/90">Start a quiz from the latest analysis and review weak topics once you finish.</p></div><Button variant="secondary" onClick={handleStartQuiz} className="w-full bg-white text-sky-700 hover:bg-sky-50 sm:w-auto"><Target className="h-4 w-4" />Start quiz</Button></div></div> : null}</div></Panel>) : <EmptyState icon={Bot} title="No AI summaries saved yet" description="Run an analysis from the upload workspace to build a note history here." action={<Button onClick={() => navigate("/upload-notes")}>Open upload workspace</Button>} />}
               </motion.div>
             ) : (
               <motion.div key="original" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}>
-                <Panel className="p-5 sm:p-7">
-                  <div className="mb-5 flex items-center justify-between gap-4">
+                <Panel className="p-4 sm:p-7">
+                  <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div><SectionLabel>Extracted source text</SectionLabel><p className="mt-2 text-sm leading-7 text-slate-500 dark:text-slate-400">This is the raw text extracted from the uploaded material. The public share page does not expose this content.</p></div>
                     <Button variant="secondary" onClick={handleDownloadPdf} disabled={isDownloadingPdf}>{isDownloadingPdf ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}PDF</Button>
                   </div>
@@ -217,7 +217,7 @@ export default function ViewNote() {
         </div>
 
         <div className="space-y-6">
-          <Panel className="p-5 sm:p-6">
+          <Panel className="p-4 sm:p-6">
             <SectionLabel>Share and export</SectionLabel>
             <h2 className="mt-3 font-display text-2xl font-bold text-slate-950 dark:text-white">Public study guide link</h2>
             <p className="mt-2 text-sm leading-7 text-slate-500 dark:text-slate-400">Share the AI study guide without exposing the extracted raw source text.</p>
@@ -228,7 +228,7 @@ export default function ViewNote() {
             {note.share?.expiresAt ? <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">Current share link expires on {formatDateTime(note.share.expiresAt)}.</p> : null}
           </Panel>
 
-          <Panel className="p-5 sm:p-6">
+          <Panel className="p-4 sm:p-6">
             <SectionLabel>Latest snapshot</SectionLabel>
             <h2 className="mt-3 font-display text-2xl font-bold text-slate-950 dark:text-white">Most recent AI output</h2>
             {latestEntry ? <div className="mt-4 space-y-3"><div className="rounded-[24px] bg-slate-50 p-4 dark:bg-slate-900"><p className="text-xs uppercase tracking-[0.18em] text-slate-400">Created</p><p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{formatDate(latestEntry.createdAt)}</p></div><div className="rounded-[24px] bg-slate-50 p-4 dark:bg-slate-900"><p className="text-xs uppercase tracking-[0.18em] text-slate-400">Prompt</p><p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{!latestEntry.prompt || latestEntry.prompt === "(No custom prompt)" ? "Standard summary" : latestEntry.prompt}</p></div></div> : <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">No AI output saved yet.</p>}
@@ -237,7 +237,7 @@ export default function ViewNote() {
       </section>
 
       <AnimatePresence>
-        {pageError && note ? <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="fixed bottom-6 right-6 z-40 w-full max-w-sm"><InlineMessage message={pageError} tone="error" /></motion.div> : null}
+        {pageError && note ? <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="fixed bottom-4 right-4 z-40 w-[calc(100%-2rem)] max-w-sm sm:bottom-6 sm:right-6"><InlineMessage message={pageError} tone="error" /></motion.div> : null}
       </AnimatePresence>
 
       <AnimatePresence>
