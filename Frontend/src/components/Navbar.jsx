@@ -68,7 +68,7 @@ export default function Navbar() {
             </span>
             <span className="min-w-0">
               <span className="font-display block truncate text-base font-bold tracking-tight text-slate-950 dark:text-white sm:text-lg">
-                ScholarAI
+                StudyAI
               </span>
               <span className="hidden text-xs text-slate-500 dark:text-slate-400 sm:block">
                 Study smarter, not louder
