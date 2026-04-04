@@ -55,12 +55,7 @@ export default function Home() {
         <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
           <PageHeader
             eyebrow="Modern AI study assistant"
-            title={
-              <>
-                Study materials become
-                <span className="text-gradient-sky"> a clear, teachable system.</span>
-              </>
-            }
+           
             description="ScholarAI helps students upload notes, generate structured explanations, build quizzes, revisit saved history, and share polished study guides without the mess of scattered tools."
             actions={
               <>
