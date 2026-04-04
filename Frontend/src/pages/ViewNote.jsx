@@ -1,47 +1,32 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useApi } from '../hooks/useApi';
-import { useAuth } from '../contexts/AuthContext';
-import { useNotes } from '../contexts/NotesContext';
-import Markdown from 'markdown-to-jsx';
-import { motion, AnimatePresence } from 'framer-motion';
-import { downloadNotePdf } from '../services/noteDownloads';
-import { 
-  ArrowLeft, 
-  FileText, 
-  Calendar, 
-  Bot, 
-  Share2, 
-  Target, 
-  Search, 
-  Copy, 
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+  ArrowLeft,
+  Bot,
+  CalendarDays,
   Check,
-  X,
-  Globe,
-  Sparkles,
-  Lightbulb,
-  Minimize2,
-  Maximize2,
+  Copy,
   Download,
+  FileText,
+  Globe,
   Loader2,
-  Zap,
-  ShieldOff
-} from 'lucide-react';
-
-/**
- * Helper: Clean Markdown & Fix Spacing
- * (Copied from UploadNotes.jsx to keep markdown rendering consistent)
- */
-const preprocessMarkdown = (text) => {
-  if (!text) return "";
-  return text
-    // 1. Ensure headings have a blank line before them
-    .replace(/([^\n])\n(#+)/g, '$1\n\n$2')
-    // 2. Ensure lists have a blank line before them
-    .replace(/([^\n])\n(-|\*|\d+\.) /g, '$1\n\n$2 ')
-    // 3. Ensure bold text has a space before it if it's stuck to a word
-    .replace(/([a-zA-Z0-9])(\*\*)/g, '$1 $2');
-};
+  Search,
+  Share2,
+  ShieldOff,
+  Sparkles,
+  Target,
+  X,
+} from "lucide-react";
+import { useApi } from "../hooks/useApi";
+import { useAuth } from "../contexts/AuthContext";
+import { useNotes } from "../contexts/NotesContext";
+import { downloadNotePdf } from "../services/noteDownloads";
+import { formatDate, formatDateTime, getFileBadgeLabel } from "../utils/formatters";
+import { EmptyState, InlineMessage, LoadingState } from "../components/ui/StateBlock";
+import { PageHeader, PageShell, Panel, SectionLabel } from "../components/ui/AppSurface";
+import Button from "../components/ui/Button";
+import MarkdownRenderer from "../components/ui/MarkdownRenderer";
 
 export default function ViewNote() {
   const { noteId } = useParams();
@@ -49,62 +34,81 @@ export default function ViewNote() {
   const { apiCall, loading } = useApi();
   const { isAuthenticated, loading: authLoading } = useAuth();
   const { setActiveNote, clearActiveQuiz } = useNotes();
+
   const [note, setNote] = useState(null);
   const [pageError, setPageError] = useState("");
-  const [activeTab, setActiveTab] = useState('ai'); // 'ai' or 'original'
+  const [activeTab, setActiveTab] = useState("ai");
   const [copiedId, setCopiedId] = useState(null);
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
-  
-  // Share State
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [shareUrl, setShareUrl] = useState("");
   const [isSharing, setIsSharing] = useState(false);
   const [shareError, setShareError] = useState("");
   const [isRevokingShare, setIsRevokingShare] = useState(false);
 
-  // Focus Mode
-  const [isFocused, setIsFocused] = useState(false);
-
   useEffect(() => {
     if (authLoading) return;
-
-    if (!isAuthenticated) {
-      navigate('/sign-in');
-      return;
-    }
-
+    if (!isAuthenticated) return navigate("/sign-in");
     fetchNote();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [noteId, authLoading, isAuthenticated, navigate]);
 
   const fetchNote = async () => {
     try {
-      const res = await apiCall('get', `notes/${noteId}`);
-      setNote(res.note);
-      setActiveNote(res.note);
+      const response = await apiCall("get", `notes/${noteId}`);
+      const resolvedNote =
+        response?.note ??
+        response?.data?.note ??
+        response?.data ??
+        (response?._id ? response : null);
+
+      if (!resolvedNote) {
+        setNote(null);
+        setPageError("This note could not be opened.");
+        return;
+      }
+
+      setNote(resolvedNote);
+      setActiveNote(resolvedNote);
       setPageError("");
     } catch (err) {
       setPageError(err.message || "Failed to load note.");
     }
   };
 
-  // --- SHARE FUNCTION ---
+  const handleCopy = async (text, id) => {
+    await navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    window.setTimeout(() => setCopiedId(null), 1800);
+  };
+
+  const handleStartQuiz = () => {
+    if (!note) return;
+    setActiveNote(note);
+    clearActiveQuiz();
+    navigate("/quiz");
+  };
+
+  const handleDownloadPdf = async () => {
+    if (!note) return;
+    setIsDownloadingPdf(true);
+    try {
+      await downloadNotePdf({ noteId: note._id, fileName: note.fileName });
+    } catch (err) {
+      setPageError(err.message || "PDF download failed.");
+    } finally {
+      setIsDownloadingPdf(false);
+    }
+  };
+
   const handleShare = async () => {
     setIsShareModalOpen(true);
-    if (shareUrl) return; // Don't regenerate if we already have it in state
-
+    if (shareUrl) return;
     setIsSharing(true);
     setShareError("");
     try {
-      const res = await apiCall('post', 'notes/share', { noteId, expiresInDays: 7 });
-      // Construct full URL using the current website origin
-      const url = `${window.location.origin}/shared/${res.shareToken}`;
-      setShareUrl(url);
-      setNote((current) =>
-        current
-          ? { ...current, share: { ...(current.share || {}), expiresAt: res.expiresAt, isActive: true } }
-          : current
-      );
+      const response = await apiCall("post", "notes/share", { noteId, expiresInDays: 7 });
+      setShareUrl(`${window.location.origin}/shared/${response.shareToken}`);
+      setNote((current) => current ? { ...current, share: { ...(current.share || {}), expiresAt: response.expiresAt, isActive: true } } : current);
     } catch (err) {
       setShareError(err.message || "Share failed.");
     } finally {
@@ -116,13 +120,9 @@ export default function ViewNote() {
     setIsRevokingShare(true);
     setShareError("");
     try {
-      await apiCall('post', 'notes/share/revoke', { noteId });
+      await apiCall("post", "notes/share/revoke", { noteId });
       setShareUrl("");
-      setNote((current) =>
-        current
-          ? { ...current, share: { ...(current.share || {}), revokedAt: new Date().toISOString(), isActive: false } }
-          : current
-      );
+      setNote((current) => current ? { ...current, share: { ...(current.share || {}), isActive: false, revokedAt: new Date().toISOString() } } : current);
     } catch (err) {
       setShareError(err.message || "Failed to revoke share link.");
     } finally {
@@ -130,370 +130,122 @@ export default function ViewNote() {
     }
   };
 
-  const handleCopy = (text, id) => {
-    navigator.clipboard.writeText(text);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
-  };
-
-  const handleStartQuiz = () => {
-    if (!note) return;
-    setActiveNote(note);
-    clearActiveQuiz();
-    navigate('/quiz');
-  };
-
-  const handleDownloadPdf = async () => {
-    if (!note) return;
-
-    setIsDownloadingPdf(true);
-    try {
-      await downloadNotePdf({
-        noteId: note._id,
-        fileName: note.fileName,
-      });
-    } catch (err) {
-      setPageError(err.message || "PDF download failed.");
-    } finally {
-      setIsDownloadingPdf(false);
-    }
-  };
-
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-black flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+  if (authLoading || (loading && !note)) {
+    return <LoadingState title="Opening note" description="Loading your study guide, history, and actions." />;
   }
 
-  if (!isAuthenticated) {
-    return null;
-  }
+  if (!isAuthenticated) return null;
 
   if (pageError && !note) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-black flex items-center justify-center p-6 text-center">
-        <div>
-          <p className="text-lg font-semibold text-gray-900 dark:text-white">Could not load this note</p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">{pageError}</p>
-        </div>
-      </div>
+      <PageShell>
+        <EmptyState title="Could not load this note" description={pageError} action={<Button onClick={() => navigate("/notes")}>Back to library</Button>} />
+      </PageShell>
     );
   }
 
-  if (loading || !note) {
+  if (!note) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-black flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
-          <p className="text-gray-500 dark:text-gray-400 font-medium">Loading document...</p>
-        </div>
-      </div>
+      <PageShell>
+        <EmptyState
+          title="This note is not available"
+          description="We couldn't find a valid note payload for this page."
+          action={<Button onClick={() => navigate("/notes")}>Back to library</Button>}
+        />
+      </PageShell>
     );
   }
+
+  const noteHistory = Array.isArray(note.history) ? note.history : [];
+  const historyCount = noteHistory.length;
+  const latestEntry = historyCount ? noteHistory[historyCount - 1] : null;
 
   return (
-    <div className={`min-h-screen bg-gray-50 dark:bg-black text-gray-900 dark:text-gray-100 font-sans ${isFocused ? 'pt-4 px-4' : 'pt-20 px-4 md:px-8'} pb-12 transition-all duration-300`}>
-      
-      <div className={`mx-auto ${isFocused ? 'max-w-6xl' : 'max-w-5xl'}`}>
-        
-        {/* Header / Navigation */}
-        {!isFocused && (
-          <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-            <div className="flex items-start gap-4">
-              <button 
-                onClick={() => navigate('/dashboard')}
-                className="p-2 -ml-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors group"
-              >
-                <ArrowLeft className="w-6 h-6 text-gray-500 group-hover:text-black dark:group-hover:text-white" />
-              </button>
-              <div>
-                <div className="flex items-center gap-3 mb-1">
-                  <h1 className="text-2xl md:text-3xl font-bold tracking-tight truncate max-w-md md:max-w-xl">
-                    {note.fileName}
-                  </h1>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
-                    {note.fileType?.split('/')[1]?.toUpperCase() || 'DOC'}
-                  </span>
-                </div>
-                <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
-                  <div className="flex items-center gap-1.5">
-                    <Calendar className="w-4 h-4" />
-                    {new Date(note.createdAt).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Actions Toolbar */}
-            <div className="flex items-center gap-2">
-              <button 
-                onClick={handleStartQuiz}
-                className="hidden sm:flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold shadow-sm transition-all active:scale-95"
-              >
-                <Target className="w-4 h-4" />
-                Generate Quiz
-              </button>
-              <button
-                onClick={handleDownloadPdf}
-                disabled={isDownloadingPdf}
-                className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-600 text-gray-700 dark:text-gray-200 rounded-lg font-semibold shadow-sm transition-all disabled:opacity-60"
-              >
-                {isDownloadingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                Download PDF
-              </button>
-              <div className="h-8 w-px bg-gray-200 dark:bg-gray-800 mx-2 hidden sm:block" />
-              
-              {/* SHARE BUTTON */}
-              <button 
-                 onClick={handleShare}
-                 className="p-2 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-gray-800 rounded-lg transition-colors"
-                 title="Share Note"
-               >
-                 <Share2 className="w-5 h-5" />
-               </button>
-
-               <button 
-                 onClick={() => setIsFocused(true)}
-                 className="p-2 text-gray-500 hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-                 title="Focus Mode"
-               >
-                 <Maximize2 className="w-5 h-5" />
-               </button>
-            </div>
-          </header>
-        )}
-
-        {/* Focus Mode Header (Only visible when focused) */}
-        {isFocused && (
-          <div className="flex justify-between items-center mb-6 bg-white dark:bg-gray-900 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800">
-             <h2 className="font-bold text-lg truncate">{note.fileName}</h2>
-             <button 
-               onClick={() => setIsFocused(false)}
-               className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
-             >
-               <Minimize2 className="w-5 h-5 text-gray-500" />
-             </button>
-          </div>
-        )}
-
-        {/* Tabs */}
-        {!isFocused && (
-          <div className="flex items-center gap-6 border-b border-gray-200 dark:border-gray-800 mb-8">
-            <button
-              onClick={() => setActiveTab('ai')}
-              className={`pb-3 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 ${
-                activeTab === 'ai' 
-                  ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400' 
-                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
-              }`}
-            >
-              <Bot className="w-4 h-4" /> AI Insights & History
-            </button>
-            <button
-              onClick={() => setActiveTab('original')}
-              className={`pb-3 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 ${
-                activeTab === 'original' 
-                  ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400' 
-                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
-              }`}
-            >
-              <FileText className="w-4 h-4" /> Extracted Text
-            </button>
-          </div>
-        )}
-
-        {/* Content Area */}
-        <AnimatePresence mode="wait">
-          {activeTab === 'ai' ? (
-            <motion.div 
-              key="ai"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="space-y-8"
-            >
-              {!note.history || note.history.length === 0 ? (
-                <div className="text-center py-20 bg-white dark:bg-gray-900 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700">
-                  <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Bot className="w-8 h-8 text-gray-400" />
-                  </div>
-                  <p className="text-gray-500 dark:text-gray-400 font-medium">No AI summaries generated yet.</p>
-                </div>
-              ) : (
-                // Render history reversed (latest first)
-                [...note.history].reverse().map((entry, idx) => (
-                  <div key={idx} className="group bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                    
-                    {/* History Entry Header */}
-                    <div className="bg-gray-50/50 dark:bg-gray-800/30 px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex items-start justify-between gap-4">
-                      <div className="flex items-start gap-3">
-                        <div className="mt-1 w-6 h-6 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center flex-shrink-0">
-                          <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">#{note.history.length - idx}</span>
-                        </div>
-                        <div>
-                          <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Prompt</p>
-                          <p className="text-sm font-medium text-gray-900 dark:text-white">
-                             {!entry.prompt || entry.prompt === "(No custom prompt)" ? "Standard Summary" : entry.prompt}
-                          </p>
-                        </div>
-                      </div>
-                      <span className="text-xs text-gray-400 whitespace-nowrap">
-                         {new Date(entry.createdAt).toLocaleDateString()}
-                      </span>
-                    </div>
-
-                    {/* Rich Content Body - STYLED to match UploadNotes AI UI */}
-                    <div className="p-6 md:p-10 relative">
-                        <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button 
-                            onClick={() => handleCopy(entry.answer, idx)}
-                            className="p-2 text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-                          >
-                            {copiedId === idx ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
-                          </button>
-                        </div>
-
-                        {/* This markdown rendering uses the same overrides and classes as UploadNotes */}
-                        <div className="prose prose-slate dark:prose-invert max-w-none prose-headings:font-bold prose-a:text-indigo-600 prose-img:rounded-xl">
-                          <Markdown options={{
-                            forceBlock: true,
-                            overrides: {
-                              h1: { component: ({ children }) => <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-6 pb-2 border-b border-slate-100 dark:border-slate-800 mt-8 first:mt-0">{children}</h1> },
-                              h2: { component: ({ children }) => <h2 className="text-xl font-bold text-slate-900 dark:text-indigo-400 mt-8 mb-4">{children}</h2> },
-                              h3: { component: ({ children }) => <h3 className="text-lg font-semibold text-slate-800 dark:text-indigo-200 mt-6 mb-2">{children}</h3> },
-                              li: { component: ({ children }) => <li className="mb-1 ml-4">{children}</li> },
-                              p: { component: ({ children }) => <p className="mb-4 leading-relaxed text-slate-700 dark:text-slate-300">{children}</p> },
-                              strong: { component: ({ children }) => <strong className="font-bold text-slate-900 dark:text-white">{children}</strong> },
-                              blockquote: { component: ({ children }) => <div className="border-l-4 border-indigo-500 pl-4 py-2 my-4 bg-slate-50 dark:bg-slate-900/50 rounded-r italic">{children}</div> }
-                            }
-                          }}>
-                            {preprocessMarkdown(String(entry.answer))}
-                          </Markdown>
-                        </div>
-
-                        {/* Bottom CTA for latest entry (same gradient CTA from UploadNotes) */}
-                        {idx === 0 && (
-                          <motion.div 
-                            initial={{ opacity: 0, y: 10 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            className="mt-12 p-6 rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-lg"
-                          >
-                            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-                              <div>
-                                <h3 className="font-bold text-lg flex items-center gap-2"><Sparkles className="w-5 h-5" /> Master this topic</h3>
-                                <p className="text-indigo-100 text-sm mt-1">Test your understanding with a personalized AI quiz.</p>
-                              </div>
-                              <button 
-                                onClick={handleStartQuiz}
-                                className="px-6 py-2 bg-white text-indigo-600 rounded-xl font-bold text-sm shadow-md hover:bg-indigo-50 transition-colors whitespace-nowrap"
-                              >
-                                Start Quiz
-                              </button>
-                            </div>
-                          </motion.div>
-                        )}
-                    </div>
-                  </div>
-                ))
-              )}
-            </motion.div>
-          ) : (
-            <motion.div 
-              key="original"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-            >
-              <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6 md:p-8 shadow-sm">
-                <div className="flex items-center justify-between gap-4 mb-4">
-                  <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
-                    <Search className="w-4 h-4" /> Raw Content
-                  </h3>
-                  <button
-                    onClick={handleDownloadPdf}
-                    disabled={isDownloadingPdf}
-                    className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-60"
-                  >
-                    {isDownloadingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                    Download PDF
-                  </button>
-                </div>
-                <div className="prose prose-sm md:prose-base dark:prose-invert max-w-none text-gray-600 dark:text-gray-300">
-                   <p className="whitespace-pre-wrap leading-relaxed">
-                     {note.extractedText || "No text extracted from this file."}
-                   </p>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-        
-        {/* --- SHARE MODAL --- */}
-        <AnimatePresence>
-          {isShareModalOpen && (
+    <PageShell>
+      <section className="space-y-8">
+        <PageHeader
+          eyebrow="Saved note"
+          title={note.fileName}
+          description="Review previous AI outputs, switch to the extracted source text, start a quiz, or create a public study guide link."
+          actions={
             <>
-              <motion.div 
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                onClick={() => setIsShareModalOpen(false)}
-                className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60]"
-              />
-              <motion.div 
-                initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
-                className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 p-6 z-[70]"
-              >
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-bold flex items-center gap-2 text-gray-900 dark:text-white">
-                    <Globe className="w-5 h-5 text-indigo-500" /> Share Note
-                  </h3>
-                  <button onClick={() => setIsShareModalOpen(false)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full">
-                    <X className="w-5 h-5 text-gray-500" />
-                  </button>
-                </div>
-
-                <p className="text-sm text-gray-500 mb-4">
-                  Shared links expose only the AI study guide summary, not the full extracted source text.
-                </p>
-
-                {note?.share?.expiresAt && (
-                  <p className="text-xs text-gray-500 mb-4">
-                    Expires on {new Date(note.share.expiresAt).toLocaleString()}.
-                  </p>
-                )}
-
-                <div className="relative">
-                  <div className="w-full p-3 pr-12 bg-gray-100 dark:bg-gray-800 rounded-xl text-sm font-mono text-gray-600 dark:text-gray-300 truncate border border-gray-200 dark:border-gray-700">
-                    {isSharing ? "Generating link..." : shareUrl}
-                  </div>
-                  {!isSharing && (
-                    <button 
-                      onClick={() => handleCopy(shareUrl, 'share')}
-                      className="absolute right-2 top-2 p-1.5 bg-white dark:bg-gray-700 rounded-lg shadow-sm hover:scale-105 transition-transform border border-gray-200 dark:border-gray-600"
-                    >
-                      {copiedId === 'share' ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4 text-indigo-500" />}
-                    </button>
-                  )}
-                </div>
-
-                {shareError && (
-                  <p className="text-sm text-red-500 mt-3">{shareError}</p>
-                )}
-
-                <button
-                  onClick={handleRevokeShare}
-                  disabled={isRevokingShare || !note?.share?.isActive}
-                  className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50"
-                >
-                  {isRevokingShare ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldOff className="w-4 h-4" />}
-                  Revoke Link
-                </button>
-              </motion.div>
+              <Button variant="ghost" onClick={() => navigate("/notes")}><ArrowLeft className="h-4 w-4" />Library</Button>
+              <Button variant="secondary" onClick={handleDownloadPdf} disabled={isDownloadingPdf}>{isDownloadingPdf ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}Download PDF</Button>
+              <Button onClick={handleStartQuiz}><Target className="h-4 w-4" />Start quiz</Button>
             </>
-          )}
-        </AnimatePresence>
+          }
+        />
 
-      </div>
-    </div>
+        <div className="flex flex-wrap gap-3">
+          <div className="rounded-full bg-white px-4 py-2 text-sm font-medium text-slate-600 ring-1 ring-slate-200 dark:bg-slate-950 dark:text-slate-300 dark:ring-slate-800">{getFileBadgeLabel(note.fileType, note.fileName)}</div>
+          <div className="rounded-full bg-white px-4 py-2 text-sm font-medium text-slate-600 ring-1 ring-slate-200 dark:bg-slate-950 dark:text-slate-300 dark:ring-slate-800">{formatDate(note.createdAt)}</div>
+          <div className="rounded-full bg-white px-4 py-2 text-sm font-medium text-slate-600 ring-1 ring-slate-200 dark:bg-slate-950 dark:text-slate-300 dark:ring-slate-800">{historyCount} saved AI responses</div>
+        </div>
+      </section>
+
+      <section className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="space-y-6">
+          <Panel className="p-3 sm:p-4">
+            <div className="flex flex-wrap gap-2">
+              {[{ id: "ai", label: "AI history", icon: Bot }, { id: "original", label: "Extracted text", icon: Search }].map((tab) => {
+                const Icon = tab.icon;
+                const active = activeTab === tab.id;
+                return <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold transition-all ${active ? "bg-sky-600 text-white shadow-[0_18px_34px_-20px_rgba(14,165,233,0.55)]" : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"}`}><Icon className="h-4 w-4" />{tab.label}</button>;
+              })}
+            </div>
+          </Panel>
+
+          <AnimatePresence mode="wait">
+            {activeTab === "ai" ? (
+              <motion.div key="ai" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} className="space-y-5">
+                {historyCount ? [...noteHistory].reverse().map((entry, index) => <Panel key={`${entry.createdAt}-${index}`} className="overflow-hidden"><div className="flex flex-col gap-4 border-b border-slate-200 bg-slate-50/80 px-5 py-4 dark:border-slate-800 dark:bg-slate-900/60 sm:flex-row sm:items-start sm:justify-between"><div><SectionLabel>AI response {historyCount - index}</SectionLabel><p className="mt-2 text-sm font-semibold text-slate-900 dark:text-white">{!entry.prompt || entry.prompt === "(No custom prompt)" ? "Standard summary" : entry.prompt}</p><p className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-400">{formatDate(entry.createdAt)}</p></div><button onClick={() => handleCopy(entry.answer, index)} className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300">{copiedId === index ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}</button></div><div className="p-5 sm:p-7"><MarkdownRenderer content={entry.answer} variant="study" />{index === 0 ? <div className="mt-8 rounded-[28px] bg-[linear-gradient(135deg,#0ea5e9,#0284c7)] p-6 text-white shadow-[0_28px_70px_-44px_rgba(14,165,233,0.85)]"><div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between"><div><p className="font-display text-xl font-bold">Turn this guide into recall practice</p><p className="mt-1 text-sm leading-7 text-sky-50/90">Start a quiz from the latest analysis and review weak topics once you finish.</p></div><Button variant="secondary" onClick={handleStartQuiz} className="bg-white text-sky-700 hover:bg-sky-50"><Target className="h-4 w-4" />Start quiz</Button></div></div> : null}</div></Panel>) : <EmptyState icon={Bot} title="No AI summaries saved yet" description="Run an analysis from the upload workspace to build a note history here." action={<Button onClick={() => navigate("/upload-notes")}>Open upload workspace</Button>} />}
+              </motion.div>
+            ) : (
+              <motion.div key="original" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}>
+                <Panel className="p-5 sm:p-7">
+                  <div className="mb-5 flex items-center justify-between gap-4">
+                    <div><SectionLabel>Extracted source text</SectionLabel><p className="mt-2 text-sm leading-7 text-slate-500 dark:text-slate-400">This is the raw text extracted from the uploaded material. The public share page does not expose this content.</p></div>
+                    <Button variant="secondary" onClick={handleDownloadPdf} disabled={isDownloadingPdf}>{isDownloadingPdf ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}PDF</Button>
+                  </div>
+                  <div className="rounded-[28px] bg-slate-50 p-5 text-sm leading-7 text-slate-600 dark:bg-slate-900 dark:text-slate-300">
+                    <p className="whitespace-pre-wrap">{note.extractedText || "No text extracted from this file."}</p>
+                  </div>
+                </Panel>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        <div className="space-y-6">
+          <Panel className="p-5 sm:p-6">
+            <SectionLabel>Share and export</SectionLabel>
+            <h2 className="mt-3 font-display text-2xl font-bold text-slate-950 dark:text-white">Public study guide link</h2>
+            <p className="mt-2 text-sm leading-7 text-slate-500 dark:text-slate-400">Share the AI study guide without exposing the extracted raw source text.</p>
+            <div className="mt-5 grid gap-3">
+              <Button onClick={handleShare}><Share2 className="h-4 w-4" />Create share link</Button>
+              <Button variant="secondary" onClick={handleDownloadPdf} disabled={isDownloadingPdf}>{isDownloadingPdf ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}Download PDF</Button>
+            </div>
+            {note.share?.expiresAt ? <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">Current share link expires on {formatDateTime(note.share.expiresAt)}.</p> : null}
+          </Panel>
+
+          <Panel className="p-5 sm:p-6">
+            <SectionLabel>Latest snapshot</SectionLabel>
+            <h2 className="mt-3 font-display text-2xl font-bold text-slate-950 dark:text-white">Most recent AI output</h2>
+            {latestEntry ? <div className="mt-4 space-y-3"><div className="rounded-[24px] bg-slate-50 p-4 dark:bg-slate-900"><p className="text-xs uppercase tracking-[0.18em] text-slate-400">Created</p><p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{formatDate(latestEntry.createdAt)}</p></div><div className="rounded-[24px] bg-slate-50 p-4 dark:bg-slate-900"><p className="text-xs uppercase tracking-[0.18em] text-slate-400">Prompt</p><p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{!latestEntry.prompt || latestEntry.prompt === "(No custom prompt)" ? "Standard summary" : latestEntry.prompt}</p></div></div> : <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">No AI output saved yet.</p>}
+          </Panel>
+        </div>
+      </section>
+
+      <AnimatePresence>
+        {pageError && note ? <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="fixed bottom-6 right-6 z-40 w-full max-w-sm"><InlineMessage message={pageError} tone="error" /></motion.div> : null}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isShareModalOpen ? <>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[60] bg-slate-950/40 backdrop-blur-sm" onClick={() => setIsShareModalOpen(false)} />
+          <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.96 }} className="fixed left-1/2 top-1/2 z-[70] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2"><Panel className="p-6 sm:p-7"><div className="flex items-center justify-between gap-4"><div><SectionLabel>Share note</SectionLabel><h2 className="mt-2 font-display text-2xl font-bold text-slate-950 dark:text-white">Public study guide link</h2></div><button onClick={() => setIsShareModalOpen(false)} className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300"><X className="h-5 w-5" /></button></div><p className="mt-4 text-sm leading-7 text-slate-500 dark:text-slate-400">Anyone with this link can read the AI study guide and download its PDF, but they will not see the raw extracted source text.</p><div className="mt-5 rounded-[24px] border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900"><div className="flex items-start justify-between gap-4"><div className="min-w-0 flex-1"><p className="text-xs uppercase tracking-[0.18em] text-slate-400">{isSharing ? "Generating link" : "Share URL"}</p><p className="mt-2 break-all text-sm text-slate-600 dark:text-slate-300">{isSharing ? "Please wait while the link is created..." : shareUrl || "No link generated yet."}</p></div>{!isSharing && shareUrl ? <button onClick={() => handleCopy(shareUrl, "share")} className="flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300">{copiedId === "share" ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}</button> : null}</div></div>{note?.share?.expiresAt ? <div className="mt-4 rounded-[24px] bg-slate-50 p-4 text-sm text-slate-500 dark:bg-slate-900 dark:text-slate-400"><div className="flex items-center gap-2"><Globe className="h-4 w-4 text-sky-600 dark:text-sky-300" />Link expires {formatDateTime(note.share.expiresAt)}</div></div> : null}<AnimatePresence>{shareError ? <div className="mt-4"><InlineMessage message={shareError} tone="error" /></div> : null}</AnimatePresence><div className="mt-6 flex flex-wrap gap-3"><Button variant="secondary" onClick={handleShare} disabled={isSharing}>{isSharing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}{shareUrl ? "Refresh link" : "Generate link"}</Button><Button variant="ghost" onClick={handleRevokeShare} disabled={isRevokingShare || !note?.share?.isActive}>{isRevokingShare ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldOff className="h-4 w-4" />}Revoke link</Button></div></Panel></motion.div>
+        </> : null}
+      </AnimatePresence>
+    </PageShell>
   );
 }

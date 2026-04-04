@@ -1,58 +1,53 @@
-import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import Markdown from 'markdown-to-jsx';
-import { motion } from 'framer-motion';
-import { API_BASE } from '../config/apiBase';
-import { downloadSharedNotePdf } from '../services/noteDownloads';
-import { 
-  Calendar, 
-  BrainCircuit, 
-  Lock, 
-  Bot, 
-  Lightbulb, 
-  Sparkles,
+import { useEffect, useState } from "react";
+import { Link, useParams } from "react-router-dom";
+import { motion } from "framer-motion";
+import {
+  BrainCircuit,
+  CalendarDays,
   Download,
+  Globe,
   Loader2,
-  ShieldCheck
-} from 'lucide-react';
+  Lock,
+  ShieldCheck,
+  Sparkles,
+} from "lucide-react";
+import { API_BASE } from "../config/apiBase";
+import { downloadSharedNotePdf } from "../services/noteDownloads";
+import { formatDate, formatDateTime, getFileBadgeLabel } from "../utils/formatters";
+import { EmptyState, LoadingState } from "../components/ui/StateBlock";
+import { PageHeader, PageShell, Panel, SectionLabel } from "../components/ui/AppSurface";
+import Button from "../components/ui/Button";
+import MarkdownRenderer from "../components/ui/MarkdownRenderer";
 
 export default function SharedNoteView() {
   const { shareToken } = useParams();
   const [note, setNote] = useState(null);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
 
   useEffect(() => {
     const fetchShared = async () => {
       try {
-        // Public endpoint: use the configured API base so shared links work in production.
         const response = await fetch(`${API_BASE}/notes/shared/${shareToken}`);
-        
-        if (!response.ok) {
-          throw new Error("Failed to load note");
-        }
-
-        const res = await response.json();
-        setNote(res.note);
-      } catch (err) {
-        setError("This link is invalid or has expired.");
+        if (!response.ok) throw new Error("Failed to load note");
+        const data = await response.json();
+        setNote(data.note);
+      } catch {
+        setError("This share link is invalid, private, or has expired.");
       } finally {
         setLoading(false);
       }
     };
+
     fetchShared();
   }, [shareToken]);
 
   const handleDownloadPdf = async () => {
     if (!note) return;
-
     setIsDownloadingPdf(true);
     try {
-      await downloadSharedNotePdf({
-        shareToken,
-        fileName: note.fileName,
-      });
+      await downloadSharedNotePdf({ shareToken, fileName: note.fileName });
     } catch (err) {
       setError(err.message || "Failed to download PDF.");
     } finally {
@@ -60,164 +55,101 @@ export default function SharedNoteView() {
     }
   };
 
-  if (error) return (
-    <div className="min-h-screen bg-gray-50 dark:bg-black flex items-center justify-center flex-col gap-4 text-center p-6">
-      <div className="w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center">
-        <Lock className="w-8 h-8 text-red-500" />
-      </div>
-      <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Access Denied</h2>
-      <p className="text-gray-600 dark:text-gray-400 font-medium">{error}</p>
-    </div>
-  );
+  if (loading) return <LoadingState title="Opening shared study guide" description="Loading the public note view." />;
 
-  if (loading || !note) return (
-    <div className="min-h-screen bg-gray-50 dark:bg-black flex items-center justify-center">
-       <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
-    </div>
-  );
-
-  const displaySummary = note.summary;
+  if (error) {
+    return (
+      <PageShell contentClassName="pt-28">
+        <EmptyState icon={Lock} title="Shared note unavailable" description={error} action={<Link to="/"><Button>Open ScholarAI</Button></Link>} />
+      </PageShell>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-black text-gray-900 dark:text-gray-100 font-sans">
-      
-      {/* Public Header */}
-      <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-30">
-        <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
-           <div className="flex items-center gap-2">
-             <div className="p-1.5 bg-indigo-600 rounded-lg">
-               <BrainCircuit className="w-5 h-5 text-white" />
-             </div>
-             <span className="font-bold text-lg tracking-tight text-gray-900 dark:text-white">
-               StudyBot <span className="text-indigo-600 dark:text-indigo-400 text-xs uppercase tracking-wider bg-indigo-50 dark:bg-indigo-900/30 px-2 py-0.5 rounded-full ml-2">Shared</span>
-             </span>
-           </div>
-           <a href="/" className="text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:underline">
-             Try StudyBot Free &rarr;
-           </a>
-        </div>
-      </div>
-
-      <div className="max-w-5xl mx-auto px-4 md:px-8 py-10">
-        
-        {/* Note Title Card */}
-        <div className="mb-10 text-center md:text-left">
-           <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white mb-3">
-             {note.fileName}
-           </h1>
-           <div className="flex items-center justify-center md:justify-start gap-4 text-sm text-gray-500 dark:text-gray-400">
-             <div className="flex items-center gap-1.5">
-               <Calendar className="w-4 h-4" />
-               {new Date(note.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}
-             </div>
-             <span className="w-1 h-1 bg-gray-300 dark:bg-gray-600 rounded-full" />
-             <span className="uppercase font-semibold tracking-wide text-xs">
-               {note.fileType?.split('/')[1] || 'DOC'}
-             </span>
-           </div>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-4 border-b border-gray-200 dark:border-gray-800 mb-8 pb-4">
-          <div className="inline-flex items-center gap-2 text-sm font-semibold text-indigo-600 dark:text-indigo-400">
-            <Bot className="w-4 h-4" /> AI Study Guide
+    <PageShell contentClassName="pt-10 pb-16">
+      <section className="mb-8 flex flex-col gap-4 rounded-[30px] border border-white/80 bg-white/78 p-4 shadow-[0_24px_70px_-44px_rgba(15,23,42,0.45)] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/80 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+        <div className="flex items-center gap-4">
+          <span className="flex h-12 w-12 items-center justify-center rounded-3xl bg-sky-600 text-white shadow-[0_18px_36px_-18px_rgba(14,165,233,0.6)]">
+            <BrainCircuit className="h-6 w-6" />
+          </span>
+          <div>
+            <p className="font-display text-2xl font-bold text-slate-950 dark:text-white">ScholarAI shared guide</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">Public study guide view with source text hidden.</p>
           </div>
-          <button
-            onClick={handleDownloadPdf}
-            disabled={isDownloadingPdf}
-            className="text-sm font-semibold text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 flex items-center gap-2 disabled:opacity-60"
-          >
-            {isDownloadingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-            Download PDF
-          </button>
-          {note.share?.expiresAt && (
-            <div className="text-xs text-gray-500 flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-green-500" />
-              Link expires {new Date(note.share.expiresAt).toLocaleString()}
-            </div>
-          )}
         </div>
+        <Link to="/sign-up">
+          <Button>
+            <Sparkles className="h-4 w-4" />
+            Create your own workspace
+          </Button>
+        </Link>
+      </section>
 
-        <motion.div 
-          key="ai"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          {!displaySummary ? (
-            <div className="text-center py-20 bg-white dark:bg-gray-900 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700">
-              <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Bot className="w-8 h-8 text-gray-400" />
-              </div>
-              <p className="text-gray-500 dark:text-gray-400 font-medium">No AI summary available for this note.</p>
+      <section className="space-y-8">
+        <PageHeader
+          eyebrow="Shared note"
+          title={note.fileName}
+          description="This page shows the AI-generated study guide only. The original extracted source text remains private to the owner."
+          actions={<Button variant="secondary" onClick={handleDownloadPdf} disabled={isDownloadingPdf}>{isDownloadingPdf ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}Download PDF</Button>}
+        />
+
+        <div className="flex flex-wrap gap-3">
+          <div className="rounded-full bg-white px-4 py-2 text-sm font-medium text-slate-600 ring-1 ring-slate-200 dark:bg-slate-950 dark:text-slate-300 dark:ring-slate-800">{getFileBadgeLabel(note.fileType, note.fileName)}</div>
+          <div className="rounded-full bg-white px-4 py-2 text-sm font-medium text-slate-600 ring-1 ring-slate-200 dark:bg-slate-950 dark:text-slate-300 dark:ring-slate-800">{formatDate(note.createdAt)}</div>
+          {note.share?.expiresAt ? <div className="rounded-full bg-white px-4 py-2 text-sm font-medium text-slate-600 ring-1 ring-slate-200 dark:bg-slate-950 dark:text-slate-300 dark:ring-slate-800">Expires {formatDateTime(note.share.expiresAt)}</div> : null}
+        </div>
+      </section>
+
+      <section className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <Panel className="p-5 sm:p-7">
+          <div className="mb-5 rounded-[24px] border border-sky-100 bg-sky-50 p-4 text-sm text-slate-600 dark:border-sky-900 dark:bg-sky-950/25 dark:text-slate-300">
+            <div className="flex items-center gap-2 font-semibold text-sky-700 dark:text-sky-300">
+              <Globe className="h-4 w-4" />
+              Public-safe study guide
             </div>
+            <p className="mt-2 leading-7">Only the AI summary is visible here. Raw extracted source text and account-only actions remain private.</p>
+          </div>
+
+          {note.summary ? (
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
+              <MarkdownRenderer content={note.summary} variant="public" />
+            </motion.div>
           ) : (
-            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6 md:p-10 shadow-sm">
-               <div className="mb-6 p-4 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-900/40 text-sm text-gray-600 dark:text-gray-300">
-                 This public page intentionally hides the original extracted source text and shows only the AI study guide.
-               </div>
-               <div className="prose-lg dark:prose-invert max-w-none">
-                  <Markdown options={{
-                     forceBlock: true,
-                     overrides: {
-                        h1: {
-                            component: ({ children, ...props }) => (
-                                <h1 {...props} className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600 dark:from-indigo-400 dark:to-violet-400 mb-6 pb-4 border-b border-gray-200 dark:border-gray-800">
-                                    {children}
-                                </h1>
-                            ),
-                        },
-                        h2: {
-                            component: ({ children, ...props }) => (
-                                <h2 {...props} className="text-xl font-bold text-gray-900 dark:text-white mt-8 mb-4 flex items-center gap-2">
-                                    <span className="w-1.5 h-6 bg-indigo-500 rounded-full"></span>
-                                    {children}
-                                </h2>
-                            ),
-                        },
-                        strong: {
-                            component: ({ children, ...props }) => (
-                                <strong {...props} className="font-bold text-indigo-900 dark:text-indigo-200 bg-indigo-50 dark:bg-indigo-900/40 px-1 rounded">
-                                    {children}
-                                </strong>
-                            ),
-                        },
-                        blockquote: {
-                            component: ({ children, ...props }) => (
-                                <div {...props} className="my-6 p-6 bg-gray-50 dark:bg-gray-800/50 rounded-xl border-l-4 border-indigo-500 flex gap-4">
-                                    <Lightbulb className="w-6 h-6 text-yellow-500 flex-shrink-0 mt-1" />
-                                    <div className="italic text-gray-700 dark:text-gray-300 text-lg">
-                                        {children}
-                                    </div>
-                                </div>
-                            ),
-                        },
-                        code: {
-                            component: ({ children, ...props }) => (
-                                <code {...props} className="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-sm font-mono text-pink-600 dark:text-pink-400 border border-gray-200 dark:border-gray-700">
-                                    {children}
-                                </code>
-                            )
-                        }
-                     }
-                  }}>
-                     {displaySummary}
-                  </Markdown>
-               </div>
-               
-               <div className="mt-12 pt-8 border-t border-gray-100 dark:border-gray-800 text-center">
-                  <p className="text-gray-500 text-sm mb-4">Want to generate quizzes from your own notes?</p>
-                  <a 
-                    href="/sign-up"
-                    className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full font-bold shadow-lg transition-all hover:scale-105"
-                  >
-                    <Sparkles className="w-4 h-4" />
-                    Create Your Free Account
-                  </a>
-               </div>
-            </div>
+            <EmptyState title="No AI summary available" description="This note does not currently have a shared study guide to display." compact />
           )}
-        </motion.div>
+        </Panel>
 
-      </div>
-    </div>
+        <div className="space-y-6">
+          <Panel className="p-5 sm:p-6">
+            <SectionLabel>Trust and clarity</SectionLabel>
+            <h2 className="mt-3 font-display text-2xl font-bold text-slate-950 dark:text-white">What this page includes</h2>
+            <div className="mt-4 space-y-3">
+              {["AI-generated study guide content", "Downloadable shared PDF version", "Expiry information for the public link"].map((item) => (
+                <div key={item} className="rounded-[22px] bg-slate-50 p-4 text-sm text-slate-600 dark:bg-slate-900 dark:text-slate-300">{item}</div>
+              ))}
+            </div>
+          </Panel>
+
+          <Panel className="p-5 sm:p-6">
+            <SectionLabel>Privacy</SectionLabel>
+            <h2 className="mt-3 font-display text-2xl font-bold text-slate-950 dark:text-white">Protected by design</h2>
+            <div className="mt-4 rounded-[24px] bg-slate-50 p-4 text-sm leading-7 text-slate-600 dark:bg-slate-900 dark:text-slate-300">
+              <div className="flex items-center gap-2 font-semibold text-emerald-700 dark:text-emerald-300">
+                <ShieldCheck className="h-4 w-4" />
+                Source text stays hidden
+              </div>
+              <p className="mt-2">Shared note pages are designed for trust: they communicate what is public, what remains private, and when access expires.</p>
+            </div>
+          </Panel>
+
+          <Panel className="p-5 sm:p-6">
+            <SectionLabel>Want your own?</SectionLabel>
+            <h2 className="mt-3 font-display text-2xl font-bold text-slate-950 dark:text-white">Upload your own study material</h2>
+            <p className="mt-2 text-sm leading-7 text-slate-500 dark:text-slate-400">Generate private study guides, quizzes, weak-topic help, and downloadable PDFs from your own notes.</p>
+            <div className="mt-5"><Link to="/sign-up"><Button className="w-full"><Sparkles className="h-4 w-4" />Create free account</Button></Link></div>
+          </Panel>
+        </div>
+      </section>
+    </PageShell>
   );
 }

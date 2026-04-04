@@ -1,29 +1,34 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useApi } from '../hooks/useApi';
-import { useAuth } from '../contexts/AuthContext';
-import { motion } from 'framer-motion';
-import { 
-  Search, 
-  FileText, 
-  Calendar, 
-  ArrowUpRight, 
-  Loader2, 
-  Library 
-} from 'lucide-react';
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import {
+  ArrowRight,
+  CalendarDays,
+  FileText,
+  Library,
+  Loader2,
+  Plus,
+  Search,
+} from "lucide-react";
+import { useApi } from "../hooks/useApi";
+import { useAuth } from "../contexts/AuthContext";
+import { formatDate, getFileBadgeLabel, stripMarkdown } from "../utils/formatters";
+import { EmptyState } from "../components/ui/StateBlock";
+import { InputField } from "../components/ui/Field";
+import { PageHeader, PageShell, Panel, SectionLabel } from "../components/ui/AppSurface";
+import Button from "../components/ui/Button";
 
 export default function NotesLibrary() {
   const { apiCall, loading } = useApi();
   const { isAuthenticated, loading: authLoading } = useAuth();
   const [notes, setNotes] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
     if (authLoading) return;
-
     if (!isAuthenticated) {
-      navigate('/sign-in');
+      navigate("/sign-in");
       return;
     }
 
@@ -32,109 +37,134 @@ export default function NotesLibrary() {
 
   const fetchNotes = async () => {
     try {
-      const res = await apiCall('get', 'notes/history');
-      setNotes(res.notes || []);
+      const response = await apiCall("get", "notes/history");
+      setNotes(response.notes || []);
     } catch (err) {
-      console.error("Failed to load library", err);
+      setNotes([]);
     }
   };
 
-  if (authLoading) return <div className="min-h-screen bg-gray-50 dark:bg-black" />;
-  if (!isAuthenticated) return null;
-
-  // Filter notes based on search
-  const filteredNotes = notes.filter(note => 
-    note.fileName.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredNotes = useMemo(
+    () =>
+      notes.filter((note) => note.fileName.toLowerCase().includes(searchTerm.trim().toLowerCase())),
+    [notes, searchTerm]
   );
 
+  if (authLoading) {
+    return null;
+  }
+
+  if (!isAuthenticated) return null;
+
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-black text-gray-900 dark:text-gray-100 font-sans pt-24 px-4 md:px-8 pb-12">
-      <div className="max-w-7xl mx-auto">
-        
-        {/* Header & Search */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
-              <Library className="w-8 h-8 text-indigo-600" />
-              My Library
-            </h1>
-            <p className="text-gray-500 dark:text-gray-400 mt-1">
-              Manage and review all your uploaded study materials.
-            </p>
-          </div>
+    <PageShell>
+      <section className="space-y-8">
+        <PageHeader
+          eyebrow="Saved material"
+          title="Your note library"
+          description="Review previously uploaded files, reopen AI study guides, and pick up where you left off without losing context."
+          actions={
+            <Button onClick={() => navigate("/upload-notes")} size="lg">
+              <Plus className="h-4 w-4" />
+              Upload new note
+            </Button>
+          }
+        />
 
-          <div className="relative w-full md:w-96">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-5 w-5 text-gray-400" />
+        <Panel className="p-5 sm:p-6">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <SectionLabel>Browse and filter</SectionLabel>
+              <p className="mt-3 text-sm leading-7 text-slate-500 dark:text-slate-400">
+                Search by file name, then reopen the study guide or continue into quiz mode from the note detail page.
+              </p>
             </div>
-            <input
-              type="text"
-              placeholder="Search notes..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="block w-full pl-10 pr-3 py-2.5 border border-gray-200 dark:border-gray-800 rounded-xl leading-5 bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm shadow-sm transition-all"
-            />
+            <div className="w-full lg:max-w-md">
+              <InputField
+                icon={Search}
+                placeholder="Search your uploaded notes"
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+              />
+            </div>
           </div>
-        </div>
+        </Panel>
+      </section>
 
-        {/* Loading State */}
+      <section className="mt-8">
         {loading ? (
-          <div className="flex justify-center py-20">
-            <Loader2 className="w-10 h-10 text-indigo-600 animate-spin" />
-          </div>
-        ) : (
-          /* Notes Grid */
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredNotes.length > 0 ? (
-              filteredNotes.map((note, index) => (
-                <motion.div
-                  key={note._id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  whileHover={{ y: -5 }}
-                  onClick={() => navigate(`/notes/${note._id}`)}
-                  className="group bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5 cursor-pointer shadow-sm hover:shadow-xl hover:border-indigo-500/30 transition-all duration-300"
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl text-indigo-600 dark:text-indigo-400">
-                      <FileText className="w-6 h-6" />
-                    </div>
-                    <ArrowUpRight className="w-5 h-5 text-gray-300 group-hover:text-indigo-500 transition-colors" />
-                  </div>
-                  
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 line-clamp-1">
-                    {note.fileName}
-                  </h3>
-                  
-                  <div className="flex items-center gap-2 text-xs text-gray-500 mb-4">
-                    <Calendar className="w-3.5 h-3.5" />
-                    {new Date(note.createdAt).toLocaleDateString()}
-                    <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-700 mx-1" />
-                    <span className="uppercase tracking-wider font-semibold">
-                      {note.fileType?.includes('pdf') ? 'PDF' : 'DOC'}
+          <Panel className="flex min-h-[18rem] items-center justify-center p-6">
+            <div className="flex flex-col items-center gap-4">
+              <Loader2 className="h-8 w-8 animate-spin text-sky-600" />
+              <p className="text-sm text-slate-500 dark:text-slate-400">Loading your study library...</p>
+            </div>
+          </Panel>
+        ) : filteredNotes.length ? (
+          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            {filteredNotes.map((note, index) => (
+              <motion.button
+                key={note._id}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.18 }}
+                transition={{ delay: index * 0.04 }}
+                whileHover={{ y: -3 }}
+                onClick={() => navigate(`/notes/${note._id}`)}
+                className="text-left"
+              >
+                <Panel className="flex h-full flex-col p-6 transition-colors hover:border-sky-300 dark:hover:border-sky-700">
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="flex h-12 w-12 items-center justify-center rounded-3xl bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300">
+                      <FileText className="h-5 w-5" />
+                    </span>
+                    <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:bg-slate-900 dark:text-slate-400">
+                      {getFileBadgeLabel(note.fileType, note.fileName)}
                     </span>
                   </div>
 
-                  {note.summary && (
-                     <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 leading-relaxed">
-                       {note.summary.replace(/[#*`]/g, '').slice(0, 100)}...
-                     </p>
-                  )}
-                </motion.div>
-              ))
-            ) : (
-              <div className="col-span-full text-center py-20">
-                <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Search className="w-8 h-8 text-gray-400" />
-                </div>
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white">No notes found</h3>
-                <p className="text-gray-500">Try uploading a new document or adjust your search.</p>
-              </div>
-            )}
+                  <div className="mt-5 flex-1">
+                    <h3 className="font-display text-xl font-bold text-slate-950 dark:text-white">
+                      {note.fileName}
+                    </h3>
+                    <p className="mt-3 line-clamp-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
+                      {note.summary
+                        ? stripMarkdown(note.summary).slice(0, 150)
+                        : "No AI summary has been generated for this note yet. Open it to continue the analysis flow."}
+                    </p>
+                  </div>
+
+                  <div className="mt-6 flex items-center justify-between border-t border-slate-200 pt-4 dark:border-slate-800">
+                    <span className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-slate-400">
+                      <CalendarDays className="h-3.5 w-3.5" />
+                      {formatDate(note.createdAt)}
+                    </span>
+                    <span className="inline-flex items-center gap-2 text-sm font-semibold text-sky-700 dark:text-sky-300">
+                      Open note
+                      <ArrowRight className="h-4 w-4" />
+                    </span>
+                  </div>
+                </Panel>
+              </motion.button>
+            ))}
           </div>
+        ) : (
+          <EmptyState
+            icon={searchTerm ? Search : Library}
+            title={searchTerm ? "No notes match that search" : "Your library is still empty"}
+            description={
+              searchTerm
+                ? "Try another keyword or clear the search to see all of your uploaded material."
+                : "Upload your first file to build a reusable study library with summaries, quiz history, and downloadable guides."
+            }
+            action={
+              <Button onClick={() => navigate("/upload-notes")}>
+                <Plus className="h-4 w-4" />
+                Upload a note
+              </Button>
+            }
+          />
         )}
-      </div>
-    </div>
+      </section>
+    </PageShell>
   );
 }

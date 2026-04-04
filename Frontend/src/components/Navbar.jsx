@@ -1,18 +1,31 @@
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { useEffect, useState } from 'react';
-import { 
-  BrainCircuit, 
-  Sun, 
-  Moon, 
-  LogOut, 
-  LayoutDashboard, 
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import { useEffect, useMemo, useState } from "react";
+import {
+  BrainCircuit,
+  Sun,
+  MoonStar,
+  LogOut,
+  LayoutDashboard,
   PlusCircle,
-  User,
+  Library,
   Menu,
-  X
-} from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+  X,
+  ArrowRight,
+} from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { cn } from "../utils/ui";
+
+const publicLinks = [
+  { label: "Product", to: "/" },
+  { label: "Sign In", to: "/sign-in" },
+];
+
+const privateLinks = [
+  { label: "Dashboard", to: "/dashboard", icon: LayoutDashboard },
+  { label: "Library", to: "/notes", icon: Library },
+  { label: "Upload", to: "/upload-notes", icon: PlusCircle },
+];
 
 export default function Navbar() {
   const { user, isAuthenticated, logout } = useAuth();
@@ -20,163 +33,214 @@ export default function Navbar() {
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Theme State
   const [isDark, setIsDark] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('theme') === 'dark' || 
-        (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    }
-    return false;
+    if (typeof window === "undefined") return false;
+    const savedTheme = window.localStorage.getItem("theme");
+    if (savedTheme) return savedTheme === "dark";
+    return window.matchMedia("(prefers-color-scheme: dark)").matches;
   });
 
-  // Apply Theme Side Effect
   useEffect(() => {
     const root = window.document.documentElement;
-    if (isDark) {
-      root.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      root.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    }
+    root.classList.toggle("dark", isDark);
+    window.localStorage.setItem("theme", isDark ? "dark" : "light");
   }, [isDark]);
+
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [location.pathname]);
+
+  const firstName = useMemo(() => user?.name?.trim()?.split(" ")?.[0] || "Student", [user?.name]);
 
   const handleLogout = async () => {
     await logout();
-    navigate('/');
+    navigate("/");
     setIsMobileMenuOpen(false);
   };
 
-  const NavItem = ({ to, icon: Icon, label }) => {
-    const isActive = location.pathname === to;
-    return (
-      <Link 
-        to={to} 
-        className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-          isActive 
-            ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400' 
-            : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-indigo-600 dark:hover:text-indigo-400'
-        }`}
-      >
-        <Icon className="w-4 h-4" />
-        <span>{label}</span>
-      </Link>
-    );
-  };
-
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-black/80 backdrop-blur-md border-b border-gray-200 dark:border-white/10">
-      <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+    <>
+      <header className="fixed inset-x-0 top-0 z-50 border-b border-white/75 bg-white/78 px-4 py-3 shadow-[0_20px_60px_-42px_rgba(15,23,42,0.45)] backdrop-blur-xl dark:border-slate-800/90 dark:bg-slate-950/80 sm:px-6 lg:px-8">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-1 sm:px-0">
+          <Link to="/" className="flex items-center gap-3">
+            <span className="flex h-11 w-11 items-center justify-center rounded-3xl bg-sky-600 text-white shadow-[0_16px_34px_-18px_rgba(2,132,199,0.7)]">
+              <BrainCircuit className="h-5 w-5" />
+            </span>
+            <span className="hidden sm:block">
+              <span className="font-display block text-lg font-bold tracking-tight text-slate-950 dark:text-white">
+                ScholarAI
+              </span>
+              <span className="block text-xs text-slate-500 dark:text-slate-400">
+                Study smarter, not louder
+              </span>
+            </span>
+          </Link>
 
-        {/* Logo */}
-        <Link to="/" className="flex items-center gap-2 group">
-          <div className="p-2 bg-indigo-600 rounded-lg group-hover:rotate-12 transition-transform">
-            <BrainCircuit className="w-5 h-5 text-white" />
-          </div>
-          <span className="font-bold text-xl tracking-tight text-gray-900 dark:text-white">
-            Study<span className="text-indigo-600 dark:text-indigo-400">Assistant</span>
-          </span>
-        </Link>
+          <nav className="hidden items-center gap-1 md:flex">
+            {isAuthenticated
+              ? privateLinks.map(({ label, to, icon: Icon }) => (
+                  <NavLink
+                    key={to}
+                    to={to}
+                    className={({ isActive }) =>
+                      cn(
+                        "flex items-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-semibold transition-all",
+                        isActive
+                          ? "bg-sky-50 text-sky-700 shadow-sm dark:bg-sky-950/40 dark:text-sky-300"
+                          : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-white"
+                      )
+                    }
+                  >
+                    <Icon className="h-4 w-4" />
+                    {label}
+                  </NavLink>
+                ))
+              : publicLinks.map(({ label, to }) => (
+                  <NavLink
+                    key={to}
+                    to={to}
+                    className={({ isActive }) =>
+                      cn(
+                        "rounded-2xl px-4 py-2.5 text-sm font-semibold transition-colors",
+                        isActive
+                          ? "text-slate-950 dark:text-white"
+                          : "text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white"
+                      )
+                    }
+                  >
+                    {label}
+                  </NavLink>
+                ))}
+          </nav>
 
-        {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center gap-1">
-          {isAuthenticated ? (
-            <>
-              <NavItem to="/dashboard" icon={LayoutDashboard} label="Dashboard" />
-              <NavItem to="/upload-notes" icon={PlusCircle} label="New Note" />
-            </>
-          ) : (
-            <>
-               <Link to="/sign-in" className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-white transition-colors">
-                 Sign In
-               </Link>
-               <Link to="/sign-up" className="ml-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full text-sm font-bold shadow-lg shadow-indigo-500/20 transition-all hover:scale-105">
-                 Sign Up
-               </Link>
-            </>
-          )}
-        </nav>
+          <div className="hidden items-center gap-3 md:flex">
+            <button
+              onClick={() => setIsDark((current) => !current)}
+              className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white/90 text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:border-slate-800 dark:bg-slate-950/85 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-white"
+              aria-label="Toggle color theme"
+            >
+              {isDark ? <Sun className="h-5 w-5 text-amber-400" /> : <MoonStar className="h-5 w-5 text-sky-600" />}
+            </button>
 
-        {/* Right Side Actions */}
-        <div className="hidden md:flex items-center gap-4">
-          {/* Theme Toggle */}
-          <button
-            onClick={() => setIsDark(!isDark)}
-            className="p-2 rounded-full text-gray-500 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
-            aria-label="Toggle Theme"
-          >
-            {isDark ? <Sun className="w-5 h-5 text-yellow-400" /> : <Moon className="w-5 h-5 text-indigo-600" />}
-          </button>
-
-          {isAuthenticated && (
-            <div className="flex items-center gap-4 pl-4 border-l border-gray-200 dark:border-gray-800">
-              <div className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-200">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white text-xs">
-                  {user?.name?.charAt(0) || 'U'}
+            {isAuthenticated ? (
+              <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white/90 px-3 py-2 dark:border-slate-800 dark:bg-slate-950/85">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-sky-600 text-sm font-bold text-white">
+                  {firstName.charAt(0)}
                 </div>
-                <span className="hidden lg:block">{user?.name?.split(' ')[0]}</span>
+                <div className="max-w-[9rem]">
+                  <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">{firstName}</p>
+                  <p className="truncate text-xs text-slate-500 dark:text-slate-400">{user?.email}</p>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="flex h-10 w-10 items-center justify-center rounded-2xl text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40 dark:hover:text-rose-300"
+                  title="Sign out"
+                >
+                  <LogOut className="h-5 w-5" />
+                </button>
               </div>
-              <button
-                onClick={handleLogout}
-                className="p-2 text-gray-400 hover:text-red-500 transition-colors"
-                title="Sign Out"
+            ) : (
+              <Link
+                to="/sign-up"
+                className="inline-flex items-center gap-2 rounded-2xl bg-sky-600 px-5 py-3 text-sm font-semibold text-white shadow-[0_18px_40px_-18px_rgba(2,132,199,0.6)] transition-all hover:bg-sky-500"
               >
-                <LogOut className="w-5 h-5" />
-              </button>
-            </div>
-          )}
-        </div>
+                Start Free
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            )}
+          </div>
 
-        {/* Mobile Menu Button */}
-        <div className="md:hidden flex items-center gap-4">
-          <button
-            onClick={() => setIsDark(!isDark)}
-            className="p-2 rounded-full text-gray-500 dark:text-gray-400"
-          >
-             {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-          </button>
-          <button 
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="text-gray-600 dark:text-gray-300"
-          >
-            {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
+          <div className="flex items-center gap-2 md:hidden">
+            <button
+              onClick={() => setIsDark((current) => !current)}
+              className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white/90 text-slate-500 dark:border-slate-800 dark:bg-slate-950/85 dark:text-slate-300"
+              aria-label="Toggle color theme"
+            >
+              {isDark ? <Sun className="h-5 w-5 text-amber-400" /> : <MoonStar className="h-5 w-5 text-sky-600" />}
+            </button>
+            <button
+              onClick={() => setIsMobileMenuOpen((current) => !current)}
+              className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white/90 text-slate-700 dark:border-slate-800 dark:bg-slate-950/85 dark:text-slate-100"
+              aria-label="Open navigation"
+            >
+              {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
+          </div>
         </div>
-      </div>
+      </header>
 
-      {/* Mobile Menu Dropdown */}
       <AnimatePresence>
-        {isMobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="md:hidden border-t border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 overflow-hidden"
-          >
-            <div className="p-4 space-y-4">
+        {isMobileMenuOpen ? (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-40 bg-slate-950/35 backdrop-blur-sm md:hidden"
+              onClick={() => setIsMobileMenuOpen(false)}
+            />
+            <motion.aside
+              initial={{ opacity: 0, y: -12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              className="fixed inset-x-4 top-24 z-50 rounded-[28px] border border-white/80 bg-white/94 p-5 shadow-[0_32px_80px_-48px_rgba(15,23,42,0.65)] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/96 md:hidden"
+            >
               {isAuthenticated ? (
-                <>
-                  <Link to="/dashboard" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-2 p-2 text-gray-700 dark:text-gray-200">
-                    <LayoutDashboard className="w-5 h-5" /> Dashboard
-                  </Link>
-                  <Link to="/upload-notes" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-2 p-2 text-gray-700 dark:text-gray-200">
-                    <PlusCircle className="w-5 h-5" /> New Note
-                  </Link>
-                  <div className="h-px bg-gray-200 dark:bg-gray-800 my-2" />
-                  <button onClick={handleLogout} className="flex items-center gap-2 p-2 text-red-500 w-full text-left">
-                    <LogOut className="w-5 h-5" /> Sign Out
+                <div className="mb-5 rounded-3xl bg-slate-50 p-4 dark:bg-slate-900">
+                  <p className="text-sm font-semibold text-slate-900 dark:text-white">{user?.name}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{user?.email}</p>
+                </div>
+              ) : null}
+
+              <div className="space-y-2">
+                {(isAuthenticated ? privateLinks : publicLinks).map(({ label, to, icon: Icon }) => (
+                  <NavLink
+                    key={to}
+                    to={to}
+                    className={({ isActive }) =>
+                      cn(
+                        "flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-semibold transition-colors",
+                        isActive
+                          ? "bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300"
+                          : "text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-900"
+                      )
+                    }
+                  >
+                    <span className="flex items-center gap-3">
+                      {Icon ? <Icon className="h-4 w-4" /> : null}
+                      {label}
+                    </span>
+                    <ArrowRight className="h-4 w-4 text-slate-400" />
+                  </NavLink>
+                ))}
+              </div>
+
+              <div className="mt-5 border-t border-slate-200 pt-5 dark:border-slate-800">
+                {isAuthenticated ? (
+                  <button
+                    onClick={handleLogout}
+                    className="flex w-full items-center justify-between rounded-2xl px-4 py-3 text-sm font-semibold text-rose-600 transition-colors hover:bg-rose-50 dark:text-rose-300 dark:hover:bg-rose-950/30"
+                  >
+                    <span className="flex items-center gap-3">
+                      <LogOut className="h-4 w-4" />
+                      Sign Out
+                    </span>
+                    <ArrowRight className="h-4 w-4" />
                   </button>
-                </>
-              ) : (
-                <>
-                  <Link to="/sign-in" onClick={() => setIsMobileMenuOpen(false)} className="block p-2 text-gray-700 dark:text-gray-200 text-center">Sign In</Link>
-                  <Link to="/sign-up" onClick={() => setIsMobileMenuOpen(false)} className="block p-2 bg-indigo-600 text-white text-center rounded-lg">Get Started</Link>
-                </>
-              )}
-            </div>
-          </motion.div>
-        )}
+                ) : (
+                  <Link
+                    to="/sign-up"
+                    className="flex items-center justify-between rounded-2xl bg-sky-600 px-4 py-3 text-sm font-semibold text-white"
+                  >
+                    Create free account
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                )}
+              </div>
+            </motion.aside>
+          </>
+        ) : null}
       </AnimatePresence>
-    </header>
+    </>
   );
 }

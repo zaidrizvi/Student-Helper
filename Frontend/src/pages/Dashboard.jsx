@@ -1,43 +1,35 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { useApi } from '../hooks/useApi';
-import { motion } from 'framer-motion';
-import { 
-  BookOpen, 
-  Trophy, 
-  Activity, 
-  Plus, 
-  FileText, 
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import {
+  BookOpen,
+  Trophy,
+  Activity,
+  Plus,
+  FileText,
   Calendar,
   ArrowUpRight,
-  Zap
-} from 'lucide-react';
+  Zap,
+  Library,
+} from "lucide-react";
+import { useAuth } from "../contexts/AuthContext";
+import { useApi } from "../hooks/useApi";
 
-// --- HELPER: Clean Markdown for Preview ---
 const stripMarkdown = (text) => {
   if (!text) return "";
-  return text
-    .replace(/#{1,6}\s?/g, "") 
-    .replace(/\*\*/g, "")      
-    .replace(/\*/g, "")        
-    .replace(/`/g, "")         
-    .replace(/\[.*?\]/g, "")   
-    .trim();
+  return text.replace(/#{1,6}\s?/g, "").replace(/\*\*/g, "").replace(/\*/g, "").replace(/`/g, "").trim();
 };
 
-const Dashboard = () => {
+export default function Dashboard() {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const { loading, apiCall } = useApi();
   const navigate = useNavigate();
   const [notes, setNotes] = useState([]);
   const [quizAttempts, setQuizAttempts] = useState([]);
-  const { loading, apiCall } = useApi();
-
-  const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
-      navigate('/sign-in');
+      navigate("/sign-in");
     } else if (isAuthenticated) {
       fetchData();
     }
@@ -46,274 +38,267 @@ const Dashboard = () => {
   const fetchData = async () => {
     try {
       const [notesRes, attemptsRes] = await Promise.all([
-        apiCall('get', 'notes/history'),
-        apiCall('get', 'notes/quiz-attempts')
+        apiCall("get", "notes/history"),
+        apiCall("get", "notes/quiz-attempts"),
       ]);
       setNotes(notesRes.notes || []);
       setQuizAttempts(attemptsRes.attempts || []);
-    } catch (err) {
-      console.error('Error fetching dashboard data:', err);
+    } catch {
       setNotes([]);
       setQuizAttempts([]);
     }
   };
 
-  if (authLoading) return <div className="min-h-screen bg-gray-50 dark:bg-black" />;
+  if (authLoading) return <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#0B0F17]" />;
   if (!isAuthenticated) return null;
 
-  // --- DYNAMIC CALCULATIONS (THE FIX) ---
+  const firstName = user?.name?.split(" ")?.[0] || "Student";
+  const today = new Date().toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  });
 
-  // 1. Calculate Average Score
-  const avgScore = quizAttempts.length > 0
-    ? Math.round((quizAttempts.reduce((sum, a) => sum + (a.score / a.totalQuestions) * 100, 0) / quizAttempts.length))
+  const avgScore = quizAttempts.length
+    ? Math.round(
+        quizAttempts.reduce((sum, attempt) => sum + (attempt.score / attempt.totalQuestions) * 100, 0) /
+          quizAttempts.length
+      )
     : 0;
 
-  // 2. Calculate Notes added this week
   const oneWeekAgo = new Date();
   oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-  const notesThisWeek = notes.filter(n => new Date(n.createdAt) > oneWeekAgo).length;
-
-  // 3. Determine Score Trend Text & Color
-  let scoreTrendText = "No quizzes yet";
-  let scoreTrendColor = "text-gray-500";
-
-  if (quizAttempts.length > 0) {
-    if (avgScore >= 80) {
-      scoreTrendText = "Excellent work!";
-      scoreTrendColor = "text-green-600";
-    } else if (avgScore >= 50) {
-      scoreTrendText = "Good progress";
-      scoreTrendColor = "text-blue-600";
-    } else {
-      scoreTrendText = "Keep pushing";
-      scoreTrendColor = "text-orange-600";
-    }
-  }
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: { staggerChildren: 0.1 }
-    }
-  };
+  const notesThisWeek = notes.filter((note) => new Date(note.createdAt) > oneWeekAgo).length;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-black text-gray-900 dark:text-gray-100 font-sans pt-24 px-4 md:px-8 pb-8">
-      <div className="max-w-7xl mx-auto space-y-8">
-        
-        {/* Header Section */}
-        <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-200 dark:border-gray-800 pb-6">
-          <div>
-            <p className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">{today}</p>
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
-              Hello, <span className="text-indigo-600 dark:text-indigo-400">{user?.name?.split(' ')[0] || 'Student'}</span>
+    <div className="min-h-screen bg-[#F8FAFC] px-4 pb-6 pt-22 text-slate-900 dark:bg-[#0B0F17] dark:text-slate-100 md:px-6">
+      <div className="mx-auto max-w-6xl space-y-4">
+        <header className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-3xl">
+            <span className="inline-flex rounded-full bg-sky-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-sky-700 dark:bg-sky-950/40 dark:text-sky-300">
+              {today}
+            </span>
+            <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-900 dark:text-white md:text-[3rem]">
+              Welcome back, <span className="text-sky-500">{firstName}</span>
             </h1>
+            <p className="mt-2.5 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">
+              Your workspace keeps recent material, quiz performance, and next actions in one place so you can move from upload to revision without hunting around.
+            </p>
           </div>
-          <div className="flex items-center gap-3">
-            <button 
-              onClick={() => navigate('/upload-notes')}
-              className="group flex items-center gap-2 bg-gray-900 dark:bg-white text-white dark:text-black px-5 py-2.5 rounded-full font-medium hover:bg-gray-800 dark:hover:bg-gray-200 transition-all shadow-lg hover:shadow-xl"
+
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <button
+              onClick={() => navigate("/upload-notes")}
+              className="flex items-center justify-center gap-2 rounded-2xl bg-sky-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-sky-500/20 transition-colors hover:bg-sky-700"
             >
-              <Plus className="w-4 h-4" />
-              <span>New Note</span>
+              <Plus className="h-4 w-4" />
+              Upload new note
+            </button>
+            <button
+              onClick={() => navigate("/notes")}
+              className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+            >
+              <Library className="h-4 w-4" />
+              Open library
             </button>
           </div>
         </header>
 
-        <motion.div 
-          variants={containerVariants}
-          initial="hidden"
-          animate="show"
-          className="grid grid-cols-1 md:grid-cols-12 gap-6"
-        >
-          {/* LEFT COLUMN - Stats & Main Content (Span 8) */}
-          <div className="md:col-span-8 space-y-6">
-            
-            {/* KPI Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <KpiCard 
-                label="Total Notes" 
-                value={notes.length} 
-                icon={<BookOpen className="w-5 h-5" />}
-                // FIX: Dynamic note count
-                trend={notes.length === 0 ? "Start uploading" : `+${notesThisWeek} this week`}
-              />
-              <KpiCard 
-                label="Avg. Score" 
-                value={`${avgScore}%`} 
-                icon={<Activity className="w-5 h-5" />} 
-                // FIX: Dynamic score text and color
-                trend={scoreTrendText}
-                trendColor={scoreTrendColor}
-              />
-              <KpiCard 
-                label="Quizzes" 
-                value={quizAttempts.length} 
-                icon={<Trophy className="w-5 h-5" />}
-                trend="Lifetime total"
-              />
-            </div>
-
-            {/* Recent Notes Area */}
-            <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 p-6 shadow-sm">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold flex items-center gap-2">
-                  <FileText className="w-5 h-5 text-gray-400" />
-                  Recent Materials
-                </h2>
-                <button 
-                  onClick={() => navigate('/notes')}
-                  className="text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
-                >
-                  View All <ArrowUpRight className="w-3 h-3" />
-                </button>
-              </div>
-
-              {loading ? (
-                <div className="h-40 flex items-center justify-center">
-                  <div className="animate-pulse w-8 h-8 bg-gray-200 rounded-full" />
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 gap-3">
-                  {notes.length === 0 ? (
-                    <div className="text-center py-12 border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-2xl">
-                       <p className="text-gray-500">No notes found. Upload your first one!</p>
-                    </div>
-                  ) : (
-                    notes.slice(0, 4).map((note) => (
-                      <NoteRow key={note._id} note={note} navigate={navigate} />
-                    ))
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* RIGHT COLUMN - Actions & Activity (Span 4) */}
-          <div className="md:col-span-4 space-y-6">
-            
-            {/* Quick Actions Panel */}
-            <div className="bg-indigo-600 dark:bg-indigo-900 rounded-3xl p-6 text-white relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full -translate-y-1/2 translate-x-1/3 blur-2xl" />
-              <h3 className="font-bold text-lg mb-1 flex items-center gap-2">
-                <Zap className="w-4 h-4" /> Quick Actions
-              </h3>
-              <p className="text-indigo-100 text-sm mb-6 opacity-80">Jump straight into productivity.</p>
-              
-              <div className="space-y-2">
-                <QuickAction 
-                  onClick={() => navigate('/upload-notes')} 
-                  label="Upload & Analyze" 
-                />
-                <QuickAction 
-                  onClick={() => navigate('/notes')} 
-                  label="Review Library" 
-                />
-              </div>
-            </div>
-
-            {/* Recent Activity / Quiz Scores */}
-            <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 p-6 shadow-sm">
-              <h3 className="font-semibold mb-4 text-sm uppercase text-gray-500 tracking-wider">Recent Performance</h3>
-              <div className="space-y-4">
-                {quizAttempts.length === 0 ? (
-                  <p className="text-sm text-gray-500 italic">No quizzes taken yet.</p>
-                ) : (
-                  quizAttempts.slice(0, 3).map((attempt, i) => (
-                    <ScoreRow key={i} attempt={attempt} />
-                  ))
-                )}
-              </div>
-            </div>
-
-          </div>
-        </motion.div>
-      </div>
-    </div>
-  );
-};
-
-// --- SUBCOMPONENTS ---
-
-const KpiCard = ({ label, value, icon, trend, trendColor = "text-gray-500" }) => (
-  <motion.div 
-    variants={{ hidden: { y: 20, opacity: 0 }, show: { y: 0, opacity: 1 } }}
-    className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm hover:shadow-md transition-shadow"
-  >
-    <div className="flex justify-between items-start mb-2">
-      <span className="p-2 bg-gray-50 dark:bg-gray-800 rounded-lg text-gray-600 dark:text-gray-300">
-        {icon}
-      </span>
-    </div>
-    <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{value}</div>
-    <div className="flex justify-between items-end">
-      <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">{label}</p>
-      <p className={`text-xs ${trendColor} font-medium`}>{trend}</p>
-    </div>
-  </motion.div>
-);
-
-const NoteRow = ({ note, navigate }) => (
-  <motion.div 
-    whileHover={{ scale: 1.01 }}
-    onClick={() => navigate(`/notes/${note._id}`)}
-    className="group flex items-center p-4 rounded-xl border border-gray-100 dark:border-gray-800 cursor-pointer transition-colors hover:border-indigo-200 dark:hover:border-indigo-800"
-  >
-    <div className="w-10 h-10 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 mr-4">
-      {note.fileType && note.fileType.includes('pdf') ? 'PDF' : 'DOC'}
-    </div>
-    <div className="flex-1 min-w-0">
-      <h4 className="font-semibold text-gray-900 dark:text-gray-100 truncate pr-4">{note.fileName}</h4>
-      <div className="flex items-center gap-3 text-xs text-gray-500 mt-0.5">
-        <span className="flex items-center gap-1">
-          <Calendar className="w-3 h-3" /> 
-          {new Date(note.createdAt).toLocaleDateString()}
-        </span>
-        <span className="w-1 h-1 bg-gray-300 rounded-full" />
-        <span className="truncate max-w-[200px]">
-          {note.summary ? stripMarkdown(note.summary).substring(0, 40) + '...' : 'No summary'}
-        </span>
-      </div>
-    </div>
-    <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-      <ArrowUpRight className="w-5 h-5 text-gray-400" />
-    </div>
-  </motion.div>
-);
-
-const QuickAction = ({ onClick, label }) => (
-  <button 
-    onClick={onClick}
-    className="w-full flex items-center justify-between p-3 bg-white/10 hover:bg-white/20 rounded-xl transition-colors text-sm font-medium"
-  >
-    {label}
-    <ArrowUpRight className="w-4 h-4" />
-  </button>
-);
-
-const ScoreRow = ({ attempt }) => {
-  const percentage = Math.round((attempt.score / attempt.totalQuestions) * 100);
-  const dateStr = attempt.completedAt || attempt.createdAt;
-  const formattedDate = dateStr ? new Date(dateStr).toLocaleDateString() : 'Recent';
-
-  return (
-    <div className="flex items-center justify-between">
-      <div>
-        <p className="text-sm font-medium text-gray-900 dark:text-white">Quiz Result</p>
-        <p className="text-xs text-gray-500">{formattedDate}</p>
-      </div>
-      <div className="flex items-center gap-3">
-        <div className="h-1.5 w-16 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-          <div 
-            className={`h-full rounded-full ${percentage >= 80 ? 'bg-green-500' : percentage >= 60 ? 'bg-yellow-500' : 'bg-red-500'}`}
-            style={{ width: `${percentage}%` }}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <StatCard
+            icon={<BookOpen className="h-5 w-5" />}
+            label="Total notes"
+            value={notes.length}
+            meta={notes.length ? `${notesThisWeek} added this week` : "Start uploading"}
+          />
+          <StatCard
+            icon={<Activity className="h-5 w-5" />}
+            label="Average quiz score"
+            value={`${avgScore}%`}
+            meta={quizAttempts.length ? "Based on submitted quizzes" : "No quizzes yet"}
+          />
+          <StatCard
+            icon={<Trophy className="h-5 w-5" />}
+            label="Quizzes completed"
+            value={quizAttempts.length}
+            meta={quizAttempts.length ? "Keep the streak moving" : "Take your first quiz"}
+          />
+          <StatCard
+            icon={<Zap className="h-5 w-5" />}
+            label="Focus today"
+            value={notes.length ? "Revise" : "Upload"}
+            meta={notes.length ? "Pick a recent note and test recall" : "Create your first study guide"}
           />
         </div>
-        <span className="text-sm font-bold">{percentage}%</span>
+
+        <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.15fr_0.85fr]">
+          <section className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-[#0D1320]">
+            <div className="mb-3 flex items-start justify-between gap-4">
+              <div>
+                <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500 dark:bg-slate-800 dark:text-slate-300">
+                  Recent Materials
+                </span>
+                <h2 className="mt-3 text-[1.55rem] font-bold tracking-tight text-slate-900 dark:text-white">
+                  Continue a note you already studied
+                </h2>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">
+                  Reopen your latest uploads, revisit generated summaries, or head to the full library for older material.
+                </p>
+              </div>
+              <button
+                onClick={() => navigate("/notes")}
+                className="hidden items-center gap-2 text-sm font-semibold text-slate-500 transition-colors hover:text-sky-600 dark:text-slate-300 dark:hover:text-sky-300 sm:flex"
+              >
+                View library
+                <ArrowUpRight className="h-4 w-4" />
+              </button>
+            </div>
+
+            {loading ? (
+              <div className="flex h-36 items-center justify-center">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-sky-200 border-t-sky-600 dark:border-slate-800 dark:border-t-sky-400" />
+              </div>
+            ) : notes.length ? (
+              <div className="space-y-2.5">
+                {notes.slice(0, 4).map((note) => (
+                  <motion.button
+                    key={note._id}
+                    whileHover={{ y: -2 }}
+                    onClick={() => navigate(`/notes/${note._id}`)}
+                    className="group flex w-full items-start gap-3 rounded-[18px] border border-slate-200 bg-slate-50 p-3 text-left transition-colors hover:border-sky-300 hover:bg-white dark:border-slate-800 dark:bg-slate-900 dark:hover:border-sky-700 dark:hover:bg-slate-950"
+                  >
+                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300">
+                      <FileText className="h-4.5 w-4.5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="truncate text-[15px] font-semibold text-slate-900 dark:text-white">{note.fileName}</h3>
+                        <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 dark:bg-slate-950 dark:text-slate-500">
+                          {note.fileType?.includes("pdf") ? "PDF" : "DOC"}
+                        </span>
+                      </div>
+                      <div className="mt-2 flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-slate-400">
+                        <Calendar className="h-3.5 w-3.5" />
+                        {new Date(note.createdAt).toLocaleDateString()}
+                      </div>
+                      <p className="mt-2.5 line-clamp-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
+                        {note.summary ? `${stripMarkdown(note.summary).slice(0, 150)}...` : "No summary generated yet."}
+                      </p>
+                    </div>
+                    <ArrowUpRight className="mt-1 h-4 w-4 shrink-0 text-slate-300 transition-colors group-hover:text-sky-500" />
+                  </motion.button>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-[22px] border-2 border-dashed border-slate-200 py-12 text-center dark:border-slate-800">
+                <p className="text-sm text-slate-500 dark:text-slate-400">No notes found. Upload your first one.</p>
+              </div>
+            )}
+          </section>
+
+          <div className="space-y-4">
+            <section className="rounded-[22px] bg-sky-600 p-4 text-white shadow-lg shadow-sky-500/20">
+              <span className="inline-flex rounded-full bg-white/15 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-white">
+                Quick Actions
+              </span>
+              <h2 className="mt-3 text-[1.55rem] font-bold tracking-tight">Stay in revision mode.</h2>
+              <p className="mt-2 text-sm leading-6 text-sky-50">
+                Upload fresh material or revisit your library when you want to turn class notes into something you can actually study from.
+              </p>
+
+              <div className="mt-4 space-y-2">
+                <QuickAction
+                  title="Upload and analyze"
+                  desc="Start a new study guide from a lecture file or screenshot."
+                  onClick={() => navigate("/upload-notes")}
+                />
+                <QuickAction
+                  title="Browse note history"
+                  desc="Jump back into previous notes, downloads, and share links."
+                  onClick={() => navigate("/notes")}
+                />
+              </div>
+            </section>
+
+            <section className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-[#0D1320]">
+              <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500 dark:bg-slate-800 dark:text-slate-300">
+                Recent Performance
+              </span>
+              <h2 className="mt-3 text-[1.55rem] font-bold tracking-tight text-slate-900 dark:text-white">Quiz feedback at a glance</h2>
+
+              <div className="mt-4 space-y-2.5">
+                {quizAttempts.length ? (
+                  quizAttempts.slice(0, 3).map((attempt, index) => {
+                    const percentage = Math.round((attempt.score / attempt.totalQuestions) * 100);
+                    return (
+                      <motion.div
+                        key={`${attempt.completedAt || attempt.createdAt}-${index}`}
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="rounded-[18px] border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900"
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <p className="text-sm font-semibold text-slate-900 dark:text-white">Quiz attempt</p>
+                            <p className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-400">
+                              {new Date(attempt.completedAt || attempt.createdAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">{percentage}%</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">
+                              {attempt.score}/{attempt.totalQuestions} correct
+                            </p>
+                          </div>
+                        </div>
+                        <div className="mt-4 h-2 rounded-full bg-slate-200 dark:bg-slate-800">
+                          <div className="h-2 rounded-full bg-sky-500" style={{ width: `${percentage}%` }} />
+                        </div>
+                      </motion.div>
+                    );
+                  })
+                ) : (
+                  <div className="rounded-[22px] border-2 border-dashed border-slate-200 py-10 text-center dark:border-slate-800">
+                    <p className="text-sm text-slate-500 dark:text-slate-400">No quizzes taken yet.</p>
+                  </div>
+                )}
+              </div>
+            </section>
+          </div>
+        </div>
       </div>
     </div>
   );
-};
+}
 
-export default Dashboard;
+function StatCard({ icon, label, value, meta }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="rounded-[20px] border border-slate-200 bg-white p-3.5 shadow-sm dark:border-slate-800 dark:bg-[#0D1320]"
+    >
+      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300">
+        {icon}
+      </div>
+      <div className="text-[1.75rem] font-bold tracking-tight text-slate-900 dark:text-white">{value}</div>
+      <p className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-200">{label}</p>
+      <p className="mt-1 text-sm leading-5 text-slate-500 dark:text-slate-400">{meta}</p>
+    </motion.div>
+  );
+}
+
+function QuickAction({ title, desc, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex w-full items-center justify-between gap-4 rounded-[18px] border border-white/20 bg-white/10 px-3.5 py-3 text-left transition-colors hover:bg-white/15"
+    >
+      <div>
+        <p className="text-sm font-semibold text-white">{title}</p>
+        <p className="mt-1 text-sm leading-5 text-sky-50">{desc}</p>
+      </div>
+      <ArrowUpRight className="h-4 w-4 shrink-0 text-white" />
+    </button>
+  );
+}
