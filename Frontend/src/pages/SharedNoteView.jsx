@@ -1,20 +1,19 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import Markdown from 'markdown-to-jsx';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { API_BASE } from '../config/apiBase';
 import { downloadSharedNotePdf } from '../services/noteDownloads';
 import { 
-  FileText, 
   Calendar, 
   BrainCircuit, 
   Lock, 
   Bot, 
-  Search, 
   Lightbulb, 
   Sparkles,
   Download,
-  Loader2
+  Loader2,
+  ShieldCheck
 } from 'lucide-react';
 
 export default function SharedNoteView() {
@@ -22,7 +21,6 @@ export default function SharedNoteView() {
   const [note, setNote] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('ai'); // 'ai' or 'original'
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
 
   useEffect(() => {
@@ -78,8 +76,7 @@ export default function SharedNoteView() {
     </div>
   );
 
-  // Fallback: If main summary is empty, try to grab the latest AI answer from history
-  const displaySummary = note.summary || (note.history && note.history.length > 0 ? note.history[note.history.length - 1].answer : null);
+  const displaySummary = note.summary;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-black text-gray-900 dark:text-gray-100 font-sans">
@@ -120,139 +117,105 @@ export default function SharedNoteView() {
            </div>
         </div>
 
-        {/* Tabs */}
-        <div className="flex items-center gap-6 border-b border-gray-200 dark:border-gray-800 mb-8">
-          <button
-            onClick={() => setActiveTab('ai')}
-            className={`pb-3 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 ${
-              activeTab === 'ai' 
-                ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400' 
-                : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
-            }`}
-          >
-            <Bot className="w-4 h-4" /> AI Summary
-          </button>
-          <button
-            onClick={() => setActiveTab('original')}
-            className={`pb-3 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 ${
-              activeTab === 'original' 
-                ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400' 
-                : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
-            }`}
-          >
-            <FileText className="w-4 h-4" /> Original Text
-          </button>
+        <div className="flex flex-wrap items-center gap-4 border-b border-gray-200 dark:border-gray-800 mb-8 pb-4">
+          <div className="inline-flex items-center gap-2 text-sm font-semibold text-indigo-600 dark:text-indigo-400">
+            <Bot className="w-4 h-4" /> AI Study Guide
+          </div>
           <button
             onClick={handleDownloadPdf}
             disabled={isDownloadingPdf}
-            className="pb-3 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 flex items-center gap-2 disabled:opacity-60"
+            className="text-sm font-semibold text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 flex items-center gap-2 disabled:opacity-60"
           >
             {isDownloadingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
             Download PDF
           </button>
+          {note.share?.expiresAt && (
+            <div className="text-xs text-gray-500 flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-green-500" />
+              Link expires {new Date(note.share.expiresAt).toLocaleString()}
+            </div>
+          )}
         </div>
 
-        {/* Content Area */}
-        <AnimatePresence mode="wait">
-          {activeTab === 'ai' ? (
-            <motion.div 
-              key="ai"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-            >
-              {!displaySummary ? (
-                <div className="text-center py-20 bg-white dark:bg-gray-900 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700">
-                  <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Bot className="w-8 h-8 text-gray-400" />
-                  </div>
-                  <p className="text-gray-500 dark:text-gray-400 font-medium">No AI summary available for this note.</p>
-                </div>
-              ) : (
-                <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6 md:p-10 shadow-sm">
-                   <div className="prose-lg dark:prose-invert max-w-none">
-                      <Markdown options={{
-                         forceBlock: true,
-                         overrides: {
-                            h1: {
-                                component: ({ children, ...props }) => (
-                                    <h1 {...props} className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600 dark:from-indigo-400 dark:to-violet-400 mb-6 pb-4 border-b border-gray-200 dark:border-gray-800">
-                                        {children}
-                                    </h1>
-                                ),
-                            },
-                            h2: {
-                                component: ({ children, ...props }) => (
-                                    <h2 {...props} className="text-xl font-bold text-gray-900 dark:text-white mt-8 mb-4 flex items-center gap-2">
-                                        <span className="w-1.5 h-6 bg-indigo-500 rounded-full"></span>
-                                        {children}
-                                    </h2>
-                                ),
-                            },
-                            strong: {
-                                component: ({ children, ...props }) => (
-                                    <strong {...props} className="font-bold text-indigo-900 dark:text-indigo-200 bg-indigo-50 dark:bg-indigo-900/40 px-1 rounded">
-                                        {children}
-                                    </strong>
-                                ),
-                            },
-                            blockquote: {
-                                component: ({ children, ...props }) => (
-                                    <div {...props} className="my-6 p-6 bg-gray-50 dark:bg-gray-800/50 rounded-xl border-l-4 border-indigo-500 flex gap-4">
-                                        <Lightbulb className="w-6 h-6 text-yellow-500 flex-shrink-0 mt-1" />
-                                        <div className="italic text-gray-700 dark:text-gray-300 text-lg">
-                                            {children}
-                                        </div>
-                                    </div>
-                                ),
-                            },
-                            code: {
-                                component: ({ children, ...props }) => (
-                                    <code {...props} className="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-sm font-mono text-pink-600 dark:text-pink-400 border border-gray-200 dark:border-gray-700">
-                                        {children}
-                                    </code>
-                                )
-                            }
-                         }
-                      }}>
-                         {displaySummary}
-                      </Markdown>
-                   </div>
-                   
-                   {/* Footer Promo */}
-                   <div className="mt-12 pt-8 border-t border-gray-100 dark:border-gray-800 text-center">
-                      <p className="text-gray-500 text-sm mb-4">Want to generate quizzes from this note?</p>
-                      <a 
-                        href="/sign-up"
-                        className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full font-bold shadow-lg transition-all hover:scale-105"
-                      >
-                        <Sparkles className="w-4 h-4" />
-                        Create Your Free Account
-                      </a>
-                   </div>
-                </div>
-              )}
-            </motion.div>
-          ) : (
-            <motion.div 
-              key="original"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-            >
-              <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6 md:p-8 shadow-sm">
-                <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                  <Search className="w-4 h-4" /> Original Content
-                </h3>
-                <div className="prose prose-sm md:prose-base dark:prose-invert max-w-none text-gray-600 dark:text-gray-300">
-                   <p className="whitespace-pre-wrap leading-relaxed">
-                     {note.extractedText || "No text available."}
-                   </p>
-                </div>
+        <motion.div 
+          key="ai"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          {!displaySummary ? (
+            <div className="text-center py-20 bg-white dark:bg-gray-900 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Bot className="w-8 h-8 text-gray-400" />
               </div>
-            </motion.div>
+              <p className="text-gray-500 dark:text-gray-400 font-medium">No AI summary available for this note.</p>
+            </div>
+          ) : (
+            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6 md:p-10 shadow-sm">
+               <div className="mb-6 p-4 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-900/40 text-sm text-gray-600 dark:text-gray-300">
+                 This public page intentionally hides the original extracted source text and shows only the AI study guide.
+               </div>
+               <div className="prose-lg dark:prose-invert max-w-none">
+                  <Markdown options={{
+                     forceBlock: true,
+                     overrides: {
+                        h1: {
+                            component: ({ children, ...props }) => (
+                                <h1 {...props} className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600 dark:from-indigo-400 dark:to-violet-400 mb-6 pb-4 border-b border-gray-200 dark:border-gray-800">
+                                    {children}
+                                </h1>
+                            ),
+                        },
+                        h2: {
+                            component: ({ children, ...props }) => (
+                                <h2 {...props} className="text-xl font-bold text-gray-900 dark:text-white mt-8 mb-4 flex items-center gap-2">
+                                    <span className="w-1.5 h-6 bg-indigo-500 rounded-full"></span>
+                                    {children}
+                                </h2>
+                            ),
+                        },
+                        strong: {
+                            component: ({ children, ...props }) => (
+                                <strong {...props} className="font-bold text-indigo-900 dark:text-indigo-200 bg-indigo-50 dark:bg-indigo-900/40 px-1 rounded">
+                                    {children}
+                                </strong>
+                            ),
+                        },
+                        blockquote: {
+                            component: ({ children, ...props }) => (
+                                <div {...props} className="my-6 p-6 bg-gray-50 dark:bg-gray-800/50 rounded-xl border-l-4 border-indigo-500 flex gap-4">
+                                    <Lightbulb className="w-6 h-6 text-yellow-500 flex-shrink-0 mt-1" />
+                                    <div className="italic text-gray-700 dark:text-gray-300 text-lg">
+                                        {children}
+                                    </div>
+                                </div>
+                            ),
+                        },
+                        code: {
+                            component: ({ children, ...props }) => (
+                                <code {...props} className="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-sm font-mono text-pink-600 dark:text-pink-400 border border-gray-200 dark:border-gray-700">
+                                    {children}
+                                </code>
+                            )
+                        }
+                     }
+                  }}>
+                     {displaySummary}
+                  </Markdown>
+               </div>
+               
+               <div className="mt-12 pt-8 border-t border-gray-100 dark:border-gray-800 text-center">
+                  <p className="text-gray-500 text-sm mb-4">Want to generate quizzes from your own notes?</p>
+                  <a 
+                    href="/sign-up"
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full font-bold shadow-lg transition-all hover:scale-105"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    Create Your Free Account
+                  </a>
+               </div>
+            </div>
           )}
-        </AnimatePresence>
+        </motion.div>
 
       </div>
     </div>

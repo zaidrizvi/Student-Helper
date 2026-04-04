@@ -32,10 +32,10 @@ export default function SignInPage() {
     setLoading(true);
 
     try {
-      await login(email, password);
+      await login(email.trim(), password);
       navigate('/dashboard');
     } catch (err) {
-      setError(err.response?.data?.error || 'Login failed. Please check your credentials.');
+      setError(err.message || 'Login failed. Please check your credentials.');
     } finally {
       setLoading(false);
     }

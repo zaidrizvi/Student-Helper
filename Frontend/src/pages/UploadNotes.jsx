@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useApi } from "../hooks/useApi";
 import { useAuth } from "../contexts/AuthContext";
+import { useNotes } from "../contexts/NotesContext";
 import { useNavigate } from "react-router-dom";
 import Markdown from "markdown-to-jsx";
 import { motion, AnimatePresence } from "framer-motion";
@@ -26,8 +27,8 @@ import {
   Image as ImageIcon
 } from "lucide-react";
 
-// --- UPDATED LIMITS (25MB & Image Support) ---
-const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB
+// --- UPDATED LIMITS (15MB & Image Support) ---
+const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15MB
 const ALLOWED_TYPES = [
   "application/pdf",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document", 
@@ -74,7 +75,8 @@ export default function UploadNotes() {
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
   
   const { loading, apiCall } = useApi();
-  const { isAuthenticated, loading: authLoading, token } = useAuth();
+  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { activeNote, setActiveNote, clearActiveNote, clearActiveQuiz } = useNotes();
   const navigate = useNavigate();
   const summaryRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -90,14 +92,13 @@ export default function UploadNotes() {
   }, [geminiOutput]);
 
   useEffect(() => {
-    const currentNotesId = localStorage.getItem("currentNotesId");
-    if (!currentNotesId || notesHistory.length === 0) return;
+    if (!activeNote?.id || notesHistory.length === 0) return;
 
-    const matchedNote = notesHistory.find((note) => note._id === currentNotesId);
+    const matchedNote = notesHistory.find((note) => note._id === activeNote.id);
     if (matchedNote) {
       setActiveNoteMeta({ _id: matchedNote._id, fileName: matchedNote.fileName });
     }
-  }, [notesHistory]);
+  }, [activeNote, notesHistory]);
 
   const fetchHistory = async () => {
     try {
@@ -116,14 +117,12 @@ export default function UploadNotes() {
 
   // --- NEW: Handle Quiz Navigation ---
   const handleStartQuiz = () => {
-    const noteId = localStorage.getItem("currentNotesId");
+    const noteId = activeNote?.id;
     if(!noteId) {
         showMsg("Please generate notes first", "error");
         return;
     }
-    // Clear cache to ensure fresh quiz for this specific note
-    localStorage.removeItem("cachedQuiz");
-    localStorage.removeItem("quizCacheTime");
+    clearActiveQuiz();
     navigate('/quiz');
   };
 
@@ -139,7 +138,7 @@ export default function UploadNotes() {
 
     // --- CHECK FILE SIZE ---
     if (f.size > MAX_FILE_SIZE) {
-        showMsg("File is too large. Max limit is 25MB.", "error");
+        showMsg("File is too large. Max limit is 15MB.", "error");
         if (fileInputRef.current) fileInputRef.current.value = "";
         return;
     }
@@ -153,7 +152,7 @@ export default function UploadNotes() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    let currentNotesId = localStorage.getItem("currentNotesId");
+    let currentNotesId = activeNote?.id;
 
     if (!file && !customPrompt && !currentNotesId) {
         return showMsg("Please upload a file to start.", "error");
@@ -173,12 +172,9 @@ export default function UploadNotes() {
         if (!upRes || !upRes.notesId) throw new Error("Upload failed: No ID returned");
         
         currentNotesId = upRes.notesId;
-        localStorage.setItem("currentNotesId", currentNotesId);
+        setActiveNote({ id: upRes.notesId, fileName: upRes.fileName || file.name });
         setActiveNoteMeta({ _id: upRes.notesId, fileName: upRes.fileName || file.name });
-        
-        // Clear old cache on new upload
-        localStorage.removeItem("cachedQuiz");
-        localStorage.removeItem("quizCacheTime");
+        clearActiveQuiz();
       }
 
       if (!currentNotesId && !file) {
@@ -204,12 +200,11 @@ export default function UploadNotes() {
       setGeminiOutput(summaryText);
       
       if (genRes.notesId) {
-        localStorage.setItem("currentNotesId", genRes.notesId);
+        setActiveNote({ id: genRes.notesId, fileName: activeNoteMeta?.fileName || file?.name || "note" });
         if (!activeNoteMeta?._id) {
           setActiveNoteMeta({ _id: genRes.notesId, fileName: file?.name || "note" });
         }
-        localStorage.removeItem("cachedQuiz");
-        localStorage.removeItem("quizCacheTime");
+        clearActiveQuiz();
       }
 
       showMsg("Analysis complete!", "success");
@@ -225,7 +220,7 @@ export default function UploadNotes() {
       console.error("Processing Error:", err);
       
       if (err.status === 404 || err.message?.toLowerCase().includes("found")) {
-         localStorage.removeItem("currentNotesId");
+         clearActiveNote();
       }
 
       showMsg(err.message || "An error occurred processing your request.", "error");
@@ -238,11 +233,8 @@ export default function UploadNotes() {
     if (fileInputRef.current) fileInputRef.current.value = "";
     
     setGeminiOutput(note.summary || "No summary available for this item.");
-    localStorage.setItem("currentNotesId", note._id);
-
-    // Clear cache on history switch
-    localStorage.removeItem("cachedQuiz");
-    localStorage.removeItem("quizCacheTime");
+    setActiveNote(note);
+    clearActiveQuiz();
     setActiveNoteMeta({ _id: note._id, fileName: note.fileName });
 
     setShowHistory(false);
@@ -256,8 +248,8 @@ export default function UploadNotes() {
   };
 
   const handleDownloadPdf = async () => {
-    const noteId = activeNoteMeta?._id || localStorage.getItem("currentNotesId");
-    if (!noteId || !token) {
+    const noteId = activeNoteMeta?._id || activeNote?.id;
+    if (!noteId) {
       showMsg("Generate or open a note first.", "error");
       return;
     }
@@ -266,7 +258,6 @@ export default function UploadNotes() {
     try {
       await downloadNotePdf({
         noteId,
-        token,
         fileName: activeNoteMeta?.fileName || file?.name || "note",
       });
       showMsg("PDF download started.", "success");
@@ -369,7 +360,7 @@ export default function UploadNotes() {
                       <UploadCloud className="w-5 h-5 text-slate-400 group-hover:text-indigo-500 transition-colors" />
                     </div>
                     <p className="font-medium text-sm text-slate-700 dark:text-slate-200">Click to upload or drag file</p>
-                    <p className="text-xs text-slate-400 mt-1">PDF, DOCX, TXT, Images (Max 25MB)</p>
+                    <p className="text-xs text-slate-400 mt-1">PDF, DOCX, TXT, Images (Max 15MB)</p>
                   </>
                 )}
               </div>
@@ -425,7 +416,7 @@ export default function UploadNotes() {
             <div className="pt-2 sticky bottom-0 pb-4 bg-white dark:bg-[#0B0F17] z-10">
               <button 
                 onClick={handleSubmit}
-                disabled={loading || (!file && !customPrompt.trim() && !localStorage.getItem("currentNotesId"))} 
+                disabled={loading || (!file && !customPrompt.trim() && !activeNote?.id)} 
                 className="
                   w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-sm 
                   shadow-lg shadow-indigo-500/25 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none 

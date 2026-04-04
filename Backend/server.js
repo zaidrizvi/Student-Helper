@@ -1,58 +1,109 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
-require('dotenv').config();
+const crypto = require("crypto");
+const express = require("express");
+const mongoose = require("mongoose");
+const cors = require("cors");
+require("dotenv").config();
+
+const authRoutes = require("./routes/authRoutes");
+const notesRoutes = require("./routes/notesRoutes");
+const errorHandler = require("./middlewares/errorHandler");
+const { createMemoryRateLimiter } = require("./middlewares/rateLimit");
+const HttpError = require("./utils/httpError");
 
 const app = express();
+app.set("trust proxy", 1);
 
-// Middleware
-app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-  credentials: true
-}));
+function getAllowedOrigins() {
+  return String(process.env.FRONTEND_URL || "http://localhost:5173")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+}
 
-app.use(express.json({ limit: '25mb' })); 
-app.use(express.urlencoded({ extended: true, limit: '25mb' }));
+const allowedOrigins = getAllowedOrigins();
 
-// Request logging
+app.use(
+  cors({
+    origin(origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new HttpError(403, "Origin not allowed by CORS"));
+    },
+    credentials: true,
+  })
+);
+
 app.use((req, res, next) => {
-  console.log(`\n🔹 ${req.method} ${req.path}`);
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Cross-Origin-Resource-Policy", "same-site");
   next();
 });
 
-// Routes
-const authRoutes = require('./routes/authRoutes');
-const notesRoutes = require('./routes/notesRoutes');
+app.use(express.json({ limit: "2mb" }));
+app.use(express.urlencoded({ extended: true, limit: "2mb" }));
 
-app.use('/api/auth', authRoutes);
-app.use('/api/notes', notesRoutes);
+app.use(
+  createMemoryRateLimiter({
+    windowMs: 60 * 1000,
+    max: 120,
+    message: "Too many requests. Please slow down.",
+  })
+);
 
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', message: 'Server is running' });
+app.use((req, res, next) => {
+  const requestId = crypto.randomUUID();
+  const startedAt = Date.now();
+
+  req.requestId = requestId;
+  res.setHeader("X-Request-Id", requestId);
+
+  res.on("finish", () => {
+    const durationMs = Date.now() - startedAt;
+    console.log(
+      JSON.stringify({
+        level: "info",
+        requestId,
+        method: req.method,
+        path: req.originalUrl,
+        statusCode: res.statusCode,
+        durationMs,
+        ip: req.ip,
+      })
+    );
+  });
+
+  next();
 });
 
-// 404 handler
+app.use("/api/auth", authRoutes);
+app.use("/api/notes", notesRoutes);
+
+app.get("/api/health", (req, res) => {
+  res.json({ status: "OK", message: "Server is running" });
+});
+
 app.use((req, res) => {
-  console.log('❌ 404 - Route not found:', req.method, req.path);
-  res.status(404).json({ error: 'Route not found' });
+  res.status(404).json({ success: false, error: "Route not found" });
 });
 
-// Error handler
-const errorHandler = require('./middlewares/errorHandler');
 app.use(errorHandler);
 
-// MongoDB connection
 mongoose
   .connect(process.env.MONGODB_URI)
   .then(() => {
-    console.log('✅ MongoDB connected successfully');
+    console.log("MongoDB connected successfully");
     const PORT = process.env.PORT || 5000;
     app.listen(PORT, () => {
-      console.log(`🚀 Server running on http://localhost:${PORT}`);
+      console.log(`Server running on port ${PORT}`);
     });
   })
   .catch((err) => {
-    console.error('❌ MongoDB connection error:', err);
+    console.error("MongoDB connection error", err);
     process.exit(1);
   });
+
+module.exports = app;

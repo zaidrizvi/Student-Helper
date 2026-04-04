@@ -1,61 +1,73 @@
-import { createContext, useState, useContext, useEffect } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import axios from "axios";
 import { API_BASE } from "../config/apiBase";
+import { normalizeApiError } from "../utils/apiError";
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem("token"));
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (token) loadUser();
-    else setLoading(false);
-  }, [token]);
+    loadUser();
+  }, []);
 
   const loadUser = async () => {
     try {
       const response = await axios.get(`${API_BASE}/auth/me`, {
-        headers: { Authorization: `Bearer ${token}` }
+        withCredentials: true,
       });
       setUser(response.data.user);
     } catch (err) {
       setUser(null);
-      setToken(null);
-      localStorage.removeItem("token");
     } finally {
       setLoading(false);
     }
   };
 
   const register = async (name, email, password) => {
-    const response = await axios.post(`${API_BASE}/auth/register`, { name, email, password });
-    const { token: t, user: u } = response.data;
-    localStorage.setItem("token", t);
-    setToken(t);
-    setUser(u);
-    return response.data;
+    try {
+      const response = await axios.post(
+        `${API_BASE}/auth/register`,
+        { name, email, password },
+        { withCredentials: true }
+      );
+      setUser(response.data.user);
+      return response.data;
+    } catch (err) {
+      throw normalizeApiError(err, "Registration failed. Please try again.");
+    }
   };
 
   const login = async (email, password) => {
-    const response = await axios.post(`${API_BASE}/auth/login`, { email, password });
-    const { token: t, user: u } = response.data;
-    localStorage.setItem("token", t);
-    setToken(t);
-    setUser(u);
-    return response.data;
+    try {
+      const response = await axios.post(
+        `${API_BASE}/auth/login`,
+        { email, password },
+        { withCredentials: true }
+      );
+      setUser(response.data.user);
+      return response.data;
+    } catch (err) {
+      throw normalizeApiError(err, "Login failed. Please check your credentials.");
+    }
   };
 
-  const logout = () => {
-    localStorage.removeItem("token");
-    setToken(null);
-    setUser(null);
+  const logout = async () => {
+    try {
+      await axios.post(`${API_BASE}/auth/logout`, {}, { withCredentials: true });
+    } catch (err) {
+      // Clear local session state even if the server call fails.
+    } finally {
+      setUser(null);
+    }
   };
 
   return (
     <AuthContext.Provider value={{
-      user, token, loading, isAuthenticated: !!token,
+      user, loading, isAuthenticated: !!user,
+      refreshUser: loadUser,
       register, login, logout
     }}>
       {children}

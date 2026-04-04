@@ -15,11 +15,9 @@ function triggerBlobDownload(blob, fileName) {
   window.URL.revokeObjectURL(blobUrl);
 }
 
-export async function downloadNotePdf({ noteId, token, fileName }) {
+export async function downloadNotePdf({ noteId, fileName }) {
   const response = await fetch(`${API_BASE}/notes/${noteId}/download-pdf`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+    credentials: "include",
   });
 
   if (!response.ok) {
@@ -31,7 +29,9 @@ export async function downloadNotePdf({ noteId, token, fileName }) {
 }
 
 export async function downloadSharedNotePdf({ shareToken, fileName }) {
-  const response = await fetch(`${API_BASE}/notes/shared/${shareToken}/download-pdf`);
+  const response = await fetch(`${API_BASE}/notes/shared/${shareToken}/download-pdf`, {
+    credentials: "include",
+  });
 
   if (!response.ok) {
     throw new Error("Failed to download PDF.");

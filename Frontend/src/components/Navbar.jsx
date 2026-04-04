@@ -41,8 +41,8 @@ export default function Navbar() {
     }
   }, [isDark]);
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/');
     setIsMobileMenuOpen(false);
   };

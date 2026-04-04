@@ -1,38 +1,92 @@
-const express = require('express');
+const path = require("path");
+const express = require("express");
+const multer = require("multer");
+
 const router = express.Router();
-const multer = require('multer');
-const upload = multer({ limits: { fileSize: 25 * 1024 * 1024 } });
+const jwtAuth = require("../middlewares/jwtAuth");
+const validateRequest = require("../middlewares/validateRequest");
+const { createMemoryRateLimiter } = require("../middlewares/rateLimit");
 const {
+  downloadExtractedNotesPdf,
+  downloadSharedExtractedNotesPdf,
+  explainWeakTopics,
+  generateQuiz,
   generateShareLink,
   getSharedNote,
-  downloadExtractedNotesPdf,
-  downloadSharedExtractedNotesPdf
-} = require('../controllers/notesController');
-const jwtAuth = require('../middlewares/jwtAuth');
-
-const {
-  uploadNotes,
-  summarizeNotes,
-  generateQuiz,
-  submitQuizAttempt,
+  getSingleNote,
   getUserNotes,
   getUserQuizAttempts,
-  getSingleNote,
-  explainWeakTopics // <--- Added import here
-} = require('../controllers/notesController');
+  revokeShareLink,
+  submitQuizAttempt,
+  summarizeNotes,
+  uploadNotes,
+} = require("../controllers/notesController");
+const {
+  validateGenerateQuizRequest,
+  validateNoteIdParam,
+  validateRevokeShareRequest,
+  validateShareRequest,
+  validateShareTokenParam,
+  validateSubmitQuizRequest,
+  validateSummaryRequest,
+  validateWeakTopicsRequest,
+} = require("../validators/notesValidators");
+const HttpError = require("../utils/httpError");
 
-// ALL routes require JWT authentication
-router.post('/upload', jwtAuth, upload.single('file'), uploadNotes);
-router.post('/summarize', jwtAuth, summarizeNotes);
-router.post('/generate-quiz', jwtAuth, generateQuiz);
-router.post('/submit-quiz', jwtAuth, submitQuizAttempt);
-router.post('/explain-weak-topics', jwtAuth, explainWeakTopics); // <--- Added route here
-router.post('/share', jwtAuth, generateShareLink);
-router.get('/history', jwtAuth, getUserNotes);
-router.get('/quiz-attempts', jwtAuth, getUserQuizAttempts);
-router.get('/shared/:shareToken/download-pdf', downloadSharedExtractedNotesPdf);
-router.get('/:noteId/download-pdf', jwtAuth, downloadExtractedNotesPdf);
-router.get('/shared/:shareToken', getSharedNote);
-router.get('/:noteId', jwtAuth, getSingleNote);
+const MAX_UPLOAD_SIZE = 15 * 1024 * 1024;
+const ALLOWED_MIME_TYPES = new Set([
+  "application/pdf",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "text/plain",
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+]);
+const ALLOWED_EXTENSIONS = new Set([".pdf", ".docx", ".txt", ".jpg", ".jpeg", ".png", ".webp"]);
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: MAX_UPLOAD_SIZE,
+    files: 1,
+  },
+  fileFilter: (req, file, cb) => {
+    const extension = path.extname(file.originalname || "").toLowerCase();
+    const isAllowedMime = ALLOWED_MIME_TYPES.has(file.mimetype);
+    const isAllowedExtension = ALLOWED_EXTENSIONS.has(extension);
+
+    if (!isAllowedMime || !isAllowedExtension) {
+      return cb(
+        new HttpError(
+          400,
+          "Unsupported file type. Please upload PDF, DOCX, TXT, JPG, PNG, or WEBP."
+        )
+      );
+    }
+
+    return cb(null, true);
+  },
+});
+
+const aiRateLimit = createMemoryRateLimiter({
+  windowMs: 10 * 60 * 1000,
+  max: 25,
+  keyGenerator: (req) => `${req.ip}:${req.auth?.userId || "anon"}:${req.path}`,
+  message: "Too many AI requests. Please wait and try again.",
+});
+
+router.post("/upload", jwtAuth, upload.single("file"), uploadNotes);
+router.post("/summarize", jwtAuth, aiRateLimit, validateRequest(validateSummaryRequest), summarizeNotes);
+router.post("/generate-quiz", jwtAuth, aiRateLimit, validateRequest(validateGenerateQuizRequest), generateQuiz);
+router.post("/submit-quiz", jwtAuth, validateRequest(validateSubmitQuizRequest), submitQuizAttempt);
+router.post("/explain-weak-topics", jwtAuth, aiRateLimit, validateRequest(validateWeakTopicsRequest), explainWeakTopics);
+router.post("/share", jwtAuth, validateRequest(validateShareRequest), generateShareLink);
+router.post("/share/revoke", jwtAuth, validateRequest(validateRevokeShareRequest), revokeShareLink);
+router.get("/history", jwtAuth, getUserNotes);
+router.get("/quiz-attempts", jwtAuth, getUserQuizAttempts);
+router.get("/shared/:shareToken/download-pdf", validateRequest(validateShareTokenParam), downloadSharedExtractedNotesPdf);
+router.get("/shared/:shareToken", validateRequest(validateShareTokenParam), getSharedNote);
+router.get("/:noteId/download-pdf", jwtAuth, validateRequest(validateNoteIdParam), downloadExtractedNotesPdf);
+router.get("/:noteId", jwtAuth, validateRequest(validateNoteIdParam), getSingleNote);
 
 module.exports = router;

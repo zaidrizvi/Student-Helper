@@ -1,11 +1,13 @@
-const pdfParse = require('pdf-parse');       // PDF text extraction
-const mammoth = require('mammoth');          // DOCX extraction
-const Tesseract = require('tesseract.js');   // OCR fallback
-const path = require('path');
-const fs = require('fs');
-const os = require('os');
+const fs = require("fs");
+const mammoth = require("mammoth");
+const os = require("os");
+const path = require("path");
+const pdfParse = require("pdf-parse");
+const Tesseract = require("tesseract.js");
+const HttpError = require("../utils/httpError");
 
-const POPPLER_SUPPORTED_PLATFORMS = new Set(['win32', 'darwin']);
+const POPPLER_SUPPORTED_PLATFORMS = new Set(["win32", "darwin"]);
+const MAX_EXTRACTED_CHARACTERS = 120000;
 
 function loadPdfPoppler() {
   if (!POPPLER_SUPPORTED_PLATFORMS.has(os.platform())) {
@@ -13,148 +15,141 @@ function loadPdfPoppler() {
   }
 
   try {
-    return require('pdf-poppler'); // PDF to Image conversion for scanned PDFs
+    return require("pdf-poppler");
   } catch (err) {
-    console.warn('pdf-poppler unavailable; scanned PDF OCR fallback is disabled.');
+    console.warn("pdf-poppler unavailable; scanned PDF OCR fallback is disabled.");
     return null;
   }
 }
 
+function normalizeExtractedText(text) {
+  return String(text || "")
+    .replace(/\u0000/g, " ")
+    .replace(/[^\S\r\n]+/g, " ")
+    .replace(/\r\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim()
+    .slice(0, MAX_EXTRACTED_CHARACTERS);
+}
+
 class FileParserService {
-  
   constructor() {
-    // Ensure a temp directory exists for processing files
-    this.tempDir = path.join(__dirname, '../temp_processing');
+    this.tempDir = path.join(__dirname, "../temp_processing");
     if (!fs.existsSync(this.tempDir)) {
       fs.mkdirSync(this.tempDir, { recursive: true });
     }
   }
 
-  /**
-   * Parse uploaded file and extract text.
-   * Now supports: PDF, DOCX, TXT, JPG, PNG, WEBP
-   */
   async parseFile(file) {
-    if (!file) throw new Error('No file provided');
-    let text = '';
+    if (!file) {
+      throw new HttpError(400, "No file provided");
+    }
+
+    let text = "";
     const mime = file.mimetype;
 
-    console.log(`Processing file type: ${mime}`); // Debug log
-
     switch (mime) {
-      // -------------------------
-      // PDF PROCESSING
-      // -------------------------
-      case 'application/pdf': {
+      case "application/pdf": {
         try {
           const pdf = await pdfParse(file.buffer);
           text = pdf.text;
 
-          // If text is scanty (scanned PDF), use OCR fallback
           if (!text || text.trim().length < 20) {
-            console.log("PDF appears scanned. Switching to OCR...");
             text = await this.ocrPdfFallback(file.buffer);
           }
         } catch (err) {
-          console.error("Standard PDF parse failed, trying OCR:", err);
           text = await this.ocrPdfFallback(file.buffer);
         }
         break;
       }
 
-      // -------------------------
-      // WORD DOC PROCESSING
-      // -------------------------
-      case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document': {
+      case "application/vnd.openxmlformats-officedocument.wordprocessingml.document": {
         const { value } = await mammoth.extractRawText({ buffer: file.buffer });
         text = value;
         break;
       }
 
-      // -------------------------
-      // TEXT FILE PROCESSING
-      // -------------------------
-      case 'text/plain': {
-        text = file.buffer.toString();
+      case "text/plain": {
+        text = file.buffer.toString("utf8");
         break;
       }
 
-      // -------------------------
-      // IMAGE PROCESSING (NEW)
-      // -------------------------
-      case 'image/jpeg':
-      case 'image/png':
-      case 'image/webp':
-      case 'image/jpg': {
-        try {
-           console.log("Image detected. Running OCR...");
-           // Tesseract works directly with image buffers, so no need for temp files here
-           const { data: { text: ocrText } } = await Tesseract.recognize(file.buffer, 'eng');
-           text = ocrText;
-        } catch (err) {
-           console.error("Image OCR failed:", err);
-           throw new Error("Failed to read text from image.");
-        }
+      case "image/jpeg":
+      case "image/png":
+      case "image/webp": {
+        text = await this.ocrImageBuffer(file.buffer);
         break;
       }
 
       default:
-        throw new Error(`Unsupported file format: ${mime}. Please upload PDF, DOCX, TXT, or Images (JPG/PNG).`);
+        throw new HttpError(
+          400,
+          "Unsupported file format. Please upload PDF, DOCX, TXT, JPG, PNG, or WEBP."
+        );
     }
 
-    // Final check for empty content
-    if (!text || !text.trim()) {
-         throw new Error('The file appears to be empty or contains no readable text.');
+    const normalizedText = normalizeExtractedText(text);
+    if (!normalizedText) {
+      throw new HttpError(
+        400,
+        "The file appears to be empty or contains no readable text."
+      );
     }
-    
-    return text;
+
+    return normalizedText;
   }
 
-  /**
-   * SPECIALIZED FALLBACK FOR PDFs (Uses pdf-poppler)
-   */
+  async ocrImageBuffer(buffer) {
+    try {
+      const {
+        data: { text },
+      } = await Tesseract.recognize(buffer, "eng");
+      return text;
+    } catch (err) {
+      throw new HttpError(422, "Failed to read text from image.");
+    }
+  }
+
   async ocrPdfFallback(buffer) {
     const pdfPoppler = loadPdfPoppler();
     if (!pdfPoppler) {
-      console.warn('Skipping scanned PDF OCR fallback because pdf-poppler is unavailable on this platform.');
       return "";
     }
 
-    const uniqueId = Date.now() + '_' + Math.round(Math.random() * 1000);
+    const uniqueId = `${Date.now()}_${Math.round(Math.random() * 1000)}`;
     const tempPdfPath = path.join(this.tempDir, `temp_${uniqueId}.pdf`);
     const outputPrefix = `img_${uniqueId}`;
 
     try {
       fs.writeFileSync(tempPdfPath, buffer);
 
-      const options = {
-        format: 'jpeg',
+      await pdfPoppler.convert(tempPdfPath, {
+        format: "jpeg",
         out_dir: this.tempDir,
         out_prefix: outputPrefix,
-        page: null 
-      };
+        page: null,
+      });
 
-      await pdfPoppler.convert(tempPdfPath, options);
-
-      const files = fs.readdirSync(this.tempDir)
-        .filter(file => file.startsWith(outputPrefix) && file.endsWith('.jpg'))
-        .sort(); 
+      const files = fs
+        .readdirSync(this.tempDir)
+        .filter((file) => file.startsWith(outputPrefix) && file.endsWith(".jpg"))
+        .sort();
 
       let fullText = "";
 
       for (const file of files) {
         const imagePath = path.join(this.tempDir, file);
-        // Reuse Tesseract for converted PDF pages
-        const { data: { text } } = await Tesseract.recognize(imagePath, 'eng');
-        fullText += text + "\n\n";
+        const {
+          data: { text },
+        } = await Tesseract.recognize(imagePath, "eng");
+        fullText += `${text}\n\n`;
         fs.unlinkSync(imagePath);
       }
 
       return fullText;
-
     } catch (err) {
       console.error("OCR Conversion Failed:", err);
-      return ""; 
+      return "";
     } finally {
       if (fs.existsSync(tempPdfPath)) {
         fs.unlinkSync(tempPdfPath);

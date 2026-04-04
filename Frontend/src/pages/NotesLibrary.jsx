@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
+import { useAuth } from '../contexts/AuthContext';
 import { motion } from 'framer-motion';
 import { 
   Search, 
@@ -13,13 +14,21 @@ import {
 
 export default function NotesLibrary() {
   const { apiCall, loading } = useApi();
+  const { isAuthenticated, loading: authLoading } = useAuth();
   const [notes, setNotes] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
+    if (authLoading) return;
+
+    if (!isAuthenticated) {
+      navigate('/sign-in');
+      return;
+    }
+
     fetchNotes();
-  }, []);
+  }, [authLoading, isAuthenticated, navigate]);
 
   const fetchNotes = async () => {
     try {
@@ -29,6 +38,9 @@ export default function NotesLibrary() {
       console.error("Failed to load library", err);
     }
   };
+
+  if (authLoading) return <div className="min-h-screen bg-gray-50 dark:bg-black" />;
+  if (!isAuthenticated) return null;
 
   // Filter notes based on search
   const filteredNotes = notes.filter(note => 

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useNotes } from '../contexts/NotesContext';
 import { useApi } from '../hooks/useApi';
 import { motion, AnimatePresence } from 'framer-motion';
 import Markdown from 'markdown-to-jsx';
@@ -30,8 +31,10 @@ export default function QuizPage() {
   const [quizResults, setQuizResults] = useState(null);
   const [isLoadingQuiz, setIsLoadingQuiz] = useState(true);
   const [direction, setDirection] = useState(1);
+  const [pageError, setPageError] = useState("");
 
   const { isAuthenticated, loading: authLoading } = useAuth();
+  const { activeNote, activeQuiz, setActiveQuiz, clearActiveQuiz } = useNotes();
   const { apiCall, loading: submittingQuiz } = useApi();
   const navigate = useNavigate();
 
@@ -41,23 +44,22 @@ export default function QuizPage() {
     } else if (isAuthenticated) {
       loadQuiz();
     }
-  }, [isAuthenticated, authLoading, navigate]);
+  }, [isAuthenticated, authLoading, navigate, activeNote]);
 
   const loadQuiz = async () => {
     setIsLoadingQuiz(true);
+    setPageError("");
     try {
-      const notesId = localStorage.getItem('currentNotesId');
+      const notesId = activeNote?.id;
       if (!notesId) {
+        setPageError("Open or generate a note before starting a quiz.");
         navigate('/upload-notes');
         return;
       }
       
-      const cachedQuiz = localStorage.getItem('cachedQuiz');
-      const cacheTime = localStorage.getItem('quizCacheTime');
-      if (cachedQuiz && cacheTime && Date.now() - parseInt(cacheTime) < 300000) {
-        const cached = JSON.parse(cachedQuiz);
-        setQuizData(cached);
-        setUserAnswers(new Array(cached.questions.length).fill(null));
+      if (activeQuiz && activeQuiz.noteId === notesId && Date.now() - activeQuiz.cachedAt < 300000) {
+        setQuizData(activeQuiz.payload);
+        setUserAnswers(new Array(activeQuiz.payload.questions.length).fill(null));
         setIsLoadingQuiz(false);
         return;
       }
@@ -69,10 +71,13 @@ export default function QuizPage() {
       
       setQuizData(response);
       setUserAnswers(new Array(response.questions.length).fill(null));
-      localStorage.setItem('cachedQuiz', JSON.stringify(response));
-      localStorage.setItem('quizCacheTime', Date.now().toString());
+      setActiveQuiz({
+        noteId: notesId,
+        cachedAt: Date.now(),
+        payload: response,
+      });
     } catch (err) {
-      console.error(err);
+      setPageError(err.message || "Failed to load quiz.");
     } finally {
       setIsLoadingQuiz(false);
     }
@@ -115,7 +120,7 @@ export default function QuizPage() {
       setQuizResults(response);
       setShowResults(true);
     } catch (err) {
-      console.error("Submission error", err);
+      setPageError(err.message || "Failed to submit quiz.");
     }
   };
   // --- LOGIC END ---
@@ -145,6 +150,19 @@ export default function QuizPage() {
 
   if (!isAuthenticated) return null;
 
+  if (!isLoadingQuiz && (!quizData || !quizData.questions?.length)) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-6 text-center">
+        <div>
+          <p className="text-xl font-semibold text-slate-900 dark:text-white">Quiz unavailable</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
+            {pageError || "We couldn't prepare a quiz for this note."}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   // --- UI: RESULTS STATE ---
   if (showResults && quizResults) {
     return (
@@ -155,9 +173,10 @@ export default function QuizPage() {
           setShowResults(false);
           setCurrentQuestion(0);
           setUserAnswers(new Array(quizData.questions.length).fill(null));
+          clearActiveQuiz();
           loadQuiz();
         }}
-        notesId={localStorage.getItem('currentNotesId')}
+        notesId={activeNote?.id}
       />
     );
   }
@@ -369,6 +388,9 @@ export default function QuizPage() {
             </button>
           )}
         </div>
+        {pageError && (
+          <p className="max-w-3xl mx-auto mt-2 text-sm text-red-500">{pageError}</p>
+        )}
       </div>
     </div>
   );

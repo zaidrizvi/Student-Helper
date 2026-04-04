@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../contexts/AuthContext';
+import { useNotes } from '../contexts/NotesContext';
 import Markdown from 'markdown-to-jsx';
 import { motion, AnimatePresence } from 'framer-motion';
 import { downloadNotePdf } from '../services/noteDownloads';
@@ -23,7 +24,8 @@ import {
   Maximize2,
   Download,
   Loader2,
-  Zap
+  Zap,
+  ShieldOff
 } from 'lucide-react';
 
 /**
@@ -45,8 +47,10 @@ export default function ViewNote() {
   const { noteId } = useParams();
   const navigate = useNavigate();
   const { apiCall, loading } = useApi();
-  const { token } = useAuth();
+  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { setActiveNote, clearActiveQuiz } = useNotes();
   const [note, setNote] = useState(null);
+  const [pageError, setPageError] = useState("");
   const [activeTab, setActiveTab] = useState('ai'); // 'ai' or 'original'
   const [copiedId, setCopiedId] = useState(null);
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
@@ -55,21 +59,32 @@ export default function ViewNote() {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [shareUrl, setShareUrl] = useState("");
   const [isSharing, setIsSharing] = useState(false);
+  const [shareError, setShareError] = useState("");
+  const [isRevokingShare, setIsRevokingShare] = useState(false);
 
   // Focus Mode
   const [isFocused, setIsFocused] = useState(false);
 
   useEffect(() => {
+    if (authLoading) return;
+
+    if (!isAuthenticated) {
+      navigate('/sign-in');
+      return;
+    }
+
     fetchNote();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [noteId]);
+  }, [noteId, authLoading, isAuthenticated, navigate]);
 
   const fetchNote = async () => {
     try {
       const res = await apiCall('get', `notes/${noteId}`);
       setNote(res.note);
+      setActiveNote(res.note);
+      setPageError("");
     } catch (err) {
-      console.error(err);
+      setPageError(err.message || "Failed to load note.");
     }
   };
 
@@ -79,15 +94,39 @@ export default function ViewNote() {
     if (shareUrl) return; // Don't regenerate if we already have it in state
 
     setIsSharing(true);
+    setShareError("");
     try {
-      const res = await apiCall('post', 'notes/share', { noteId });
+      const res = await apiCall('post', 'notes/share', { noteId, expiresInDays: 7 });
       // Construct full URL using the current website origin
       const url = `${window.location.origin}/shared/${res.shareToken}`;
       setShareUrl(url);
+      setNote((current) =>
+        current
+          ? { ...current, share: { ...(current.share || {}), expiresAt: res.expiresAt, isActive: true } }
+          : current
+      );
     } catch (err) {
-      console.error("Share failed", err);
+      setShareError(err.message || "Share failed.");
     } finally {
       setIsSharing(false);
+    }
+  };
+
+  const handleRevokeShare = async () => {
+    setIsRevokingShare(true);
+    setShareError("");
+    try {
+      await apiCall('post', 'notes/share/revoke', { noteId });
+      setShareUrl("");
+      setNote((current) =>
+        current
+          ? { ...current, share: { ...(current.share || {}), revokedAt: new Date().toISOString(), isActive: false } }
+          : current
+      );
+    } catch (err) {
+      setShareError(err.message || "Failed to revoke share link.");
+    } finally {
+      setIsRevokingShare(false);
     }
   };
 
@@ -99,26 +138,49 @@ export default function ViewNote() {
 
   const handleStartQuiz = () => {
     if (!note) return;
-    localStorage.setItem('currentNotesId', note._id);
+    setActiveNote(note);
+    clearActiveQuiz();
     navigate('/quiz');
   };
 
   const handleDownloadPdf = async () => {
-    if (!note || !token) return;
+    if (!note) return;
 
     setIsDownloadingPdf(true);
     try {
       await downloadNotePdf({
         noteId: note._id,
-        token,
         fileName: note.fileName,
       });
     } catch (err) {
-      console.error("PDF download failed", err);
+      setPageError(err.message || "PDF download failed.");
     } finally {
       setIsDownloadingPdf(false);
     }
   };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-black flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  if (pageError && !note) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-black flex items-center justify-center p-6 text-center">
+        <div>
+          <p className="text-lg font-semibold text-gray-900 dark:text-white">Could not load this note</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">{pageError}</p>
+        </div>
+      </div>
+    );
+  }
 
   if (loading || !note) {
     return (
@@ -391,8 +453,14 @@ export default function ViewNote() {
                 </div>
 
                 <p className="text-sm text-gray-500 mb-4">
-                  Anyone with this link can view a read-only version of this note and its AI summary.
+                  Shared links expose only the AI study guide summary, not the full extracted source text.
                 </p>
+
+                {note?.share?.expiresAt && (
+                  <p className="text-xs text-gray-500 mb-4">
+                    Expires on {new Date(note.share.expiresAt).toLocaleString()}.
+                  </p>
+                )}
 
                 <div className="relative">
                   <div className="w-full p-3 pr-12 bg-gray-100 dark:bg-gray-800 rounded-xl text-sm font-mono text-gray-600 dark:text-gray-300 truncate border border-gray-200 dark:border-gray-700">
@@ -407,6 +475,19 @@ export default function ViewNote() {
                     </button>
                   )}
                 </div>
+
+                {shareError && (
+                  <p className="text-sm text-red-500 mt-3">{shareError}</p>
+                )}
+
+                <button
+                  onClick={handleRevokeShare}
+                  disabled={isRevokingShare || !note?.share?.isActive}
+                  className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50"
+                >
+                  {isRevokingShare ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldOff className="w-4 h-4" />}
+                  Revoke Link
+                </button>
               </motion.div>
             </>
           )}

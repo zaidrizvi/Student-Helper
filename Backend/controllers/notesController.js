@@ -3,60 +3,68 @@ const Quiz = require("../models/Quiz");
 const QuizAttempt = require("../models/QuizAttempt");
 const fileParser = require("../services/fileParser");
 const geminiService = require("../services/geminiService");
-const crypto = require("crypto");
 const { buildExtractedNotesPdf } = require("../services/notePdfService");
+const HttpError = require("../utils/httpError");
+const {
+  buildPrivateNotePayload,
+  buildSharedNotePayload,
+  createNoteHistoryEntry,
+  findOwnedDocument,
+  findSharedNoteByToken,
+  getNoteHistory,
+  sanitizeQuizForClient,
+  setShareState,
+} = require("../services/notesService");
 
-// -----------------------------
-// Helper: validate ownership
-// -----------------------------
-async function validateOwnership(Model, id, userId) {
-  // Basic Mongo ID check
-  if (!id || !id.match(/^[0-9a-fA-F]{24}$/)) return { error: "INVALID_ID" };
-
-  const doc = await Model.findById(id);
-
-  if (!doc) return { error: "NOT_FOUND" };
-
-  if (String(doc.userId) !== String(userId)) {
-    return { error: "UNAUTHORIZED" };
-  }
-
-  return { doc };
+function sanitizeFileName(name = "note") {
+  return String(name || "note")
+    .replace(/[^\w.\-()\s]/g, "")
+    .trim()
+    .slice(0, 255) || "note";
 }
 
-// -----------------------------
-// Upload Notes
-// -----------------------------
+function compareAnswers(left, right) {
+  return (
+    String(left || "")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, " ") ===
+    String(right || "")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, " ")
+  );
+}
+
 exports.uploadNotes = async (req, res, next) => {
   try {
     const userId = String(req.auth.userId);
 
     if (!req.file) {
-      return res.status(400).json({ error: "No file uploaded" });
+      throw new HttpError(400, "No file uploaded");
     }
 
     const extractedText = await fileParser.parseFile(req.file);
 
-    // FIX 1: Added .trim() to ensure we don't save files that are just whitespace
     if (!extractedText || extractedText.trim().length < 50) {
-      return res.status(400).json({
-        error:
-          "Could not extract enough text. The file might be empty, scanned image-only, or too short.",
-      });
+      throw new HttpError(
+        400,
+        "Could not extract enough text. The file might be empty, image-only, or too short."
+      );
     }
 
     const notes = await Notes.create({
       userId,
-      fileName: req.file.originalname,
+      fileName: sanitizeFileName(req.file.originalname),
       fileType: req.file.mimetype,
       extractedText,
-      history: [],
+      summary: "",
     });
 
     res.json({
       success: true,
       notesId: notes._id,
-      fileName: req.file.originalname,
+      fileName: notes.fileName,
       message: "File processed successfully",
     });
   } catch (err) {
@@ -64,145 +72,102 @@ exports.uploadNotes = async (req, res, next) => {
   }
 };
 
-// -----------------------------
-// Summarize Notes
-// -----------------------------
 exports.summarizeNotes = async (req, res, next) => {
   try {
-    let { notesId, prompt = "", mode = "normal" } = req.body;
+    const { notesId, prompt = "", mode = "normal" } = req.validated?.body || req.body;
     const userId = String(req.auth.userId);
 
-    const validModes = ["short", "normal", "detailed", "ultra"];
-    const selectedMode = validModes.includes(mode) ? mode : "normal";
-
-    let notes;
-
-    // Logic Branch:
+    let note;
     if (notesId) {
-      // A. If ID exists, use existing file context
-      const { doc, error } = await validateOwnership(Notes, notesId, userId);
-      if (error)
-        return res
-          .status(error === "UNAUTHORIZED" ? 403 : 404)
-          .json({ error: "Access denied or Note not found" });
-      notes = doc;
+      note = await findOwnedDocument(Notes, notesId, userId, "Note not found");
     } else {
-      // B. If NO ID, create a "General Conversation" note
-      notes = await Notes.create({
+      note = await Notes.create({
         userId,
         fileName: "AI Conversation",
         fileType: "text/plain",
-        extractedText: "", // Empty context
-        history: [],
+        extractedText: "General study assistance request.",
+        summary: "",
       });
     }
 
-    // Handling empty text context for general chat to prevent AI confusion
-    const textContext = notes.extractedText
-      ? notes.extractedText
-      : "General knowledge request.";
-
-    const summary = await geminiService.summarize(
-      textContext,
-      prompt,
-      selectedMode
-    );
-
-    // FIX 2: Check if summary is actually returned
-    if (!summary) {
-      throw new Error("AI generated an empty response. Please try again.");
+    const summary = await geminiService.summarize(note.extractedText, prompt, mode);
+    if (!summary || !String(summary).trim()) {
+      throw new HttpError(502, "AI generated an empty response. Please try again.");
     }
 
-    notes.history.push({
-  prompt: prompt || `Generated ${selectedMode} summary`,
-  answer: summary,
-  createdAt: new Date(),
-});
+    await createNoteHistoryEntry({
+      note,
+      userId,
+      prompt: prompt || `Generated ${mode} summary`,
+      answer: String(summary).trim(),
+      mode,
+    });
 
-notes.summary = summary;  // <-- THIS WAS MISSING
-
-await notes.save();
-
-    res.json({ success: true, summary, notesId: notes._id });
+    res.json({
+      success: true,
+      summary: String(summary).trim(),
+      notesId: note._id,
+    });
   } catch (err) {
     next(err);
   }
 };
 
-// -----------------------------
-// Generate Quiz
-// -----------------------------
 exports.generateQuiz = async (req, res, next) => {
   try {
-    let { notesId, numQuestions = 5 } = req.body;
+    const { notesId, numQuestions } = req.validated?.body || req.body;
     const userId = String(req.auth.userId);
 
-    if (numQuestions > 20) numQuestions = 20;
-    if (numQuestions < 1) numQuestions = 5;
-
-    const { doc: notes, error } = await validateOwnership(
-      Notes,
-      notesId,
-      userId
-    );
-
-    if (error)
-      return res
-        .status(error === "UNAUTHORIZED" ? 403 : 404)
-        .json({ error: "Access denied or Note not found" });
-
-    const questions = await geminiService.generateQuiz(
-      notes.extractedText,
-      numQuestions
-    );
+    const note = await findOwnedDocument(Notes, notesId, userId, "Note not found");
+    const questions = await geminiService.generateQuiz(note.extractedText, numQuestions);
 
     const quiz = await Quiz.create({
       userId,
-      notesId: notes._id,
+      notesId: note._id,
       questions,
     });
 
-    res.json({ success: true, quizId: quiz._id, questions: quiz.questions });
+    res.json({
+      success: true,
+      ...sanitizeQuizForClient(quiz),
+    });
   } catch (err) {
     next(err);
   }
 };
 
-// -----------------------------
-// Submit Quiz Attempt
-// -----------------------------
 exports.submitQuizAttempt = async (req, res, next) => {
   try {
-    const { quizId, userAnswers } = req.body;
+    const { quizId, userAnswers } = req.validated?.body || req.body;
     const userId = String(req.auth.userId);
 
-    const { doc: quiz, error } = await validateOwnership(Quiz, quizId, userId);
+    const quiz = await findOwnedDocument(Quiz, quizId, userId, "Quiz not found");
+    const answerMap = new Map();
 
-    if (error)
-      return res
-        .status(error === "UNAUTHORIZED" ? 403 : 404)
-        .json({ error: "Access denied or Quiz not found" });
+    for (const answer of userAnswers) {
+      if (answer.questionIndex >= quiz.questions.length) {
+        throw new HttpError(400, "userAnswers contains an out-of-range questionIndex");
+      }
+
+      if (answerMap.has(answer.questionIndex)) {
+        throw new HttpError(400, "Duplicate question answers are not allowed");
+      }
+
+      answerMap.set(answer.questionIndex, answer.selectedAnswer);
+    }
 
     let score = 0;
-    let weakTopics = [];
+    const weakTopics = [];
 
-    quiz.questions.forEach((q, idx) => {
-      const ans = userAnswers.find((a) => a.questionIndex === idx);
+    quiz.questions.forEach((question, index) => {
+      const selectedAnswer = answerMap.get(index);
+      if (selectedAnswer && compareAnswers(selectedAnswer, question.answer)) {
+        score += 1;
+        return;
+      }
 
-      // FIX 3: Robust Answer Comparison
-      // We compare strings by trimming whitespace and lowercasing to avoid "False Negatives"
-      if (ans && ans.selectedAnswer) {
-        const cleanUserAnswer = String(ans.selectedAnswer).trim().toLowerCase();
-        const cleanCorrectAnswer = String(q.answer).trim().toLowerCase();
-
-        if (cleanUserAnswer === cleanCorrectAnswer) {
-          score++;
-        } else {
-          if (q.topic) weakTopics.push(q.topic);
-        }
-      } else {
-        // If no answer provided or found, mark wrong
-        if (q.topic) weakTopics.push(q.topic);
+      if (question.topic) {
+        weakTopics.push(question.topic);
       }
     });
 
@@ -212,7 +177,7 @@ exports.submitQuizAttempt = async (req, res, next) => {
       userAnswers,
       score,
       totalQuestions: quiz.questions.length,
-      weakTopics: [...new Set(weakTopics)], // Deduplicate topics
+      weakTopics: [...new Set(weakTopics)],
       completedAt: new Date(),
     });
 
@@ -229,32 +194,13 @@ exports.submitQuizAttempt = async (req, res, next) => {
   }
 };
 
-// -----------------------------
-// Explain Weak Topics
-// -----------------------------
 exports.explainWeakTopics = async (req, res, next) => {
   try {
-    const { notesId, weakTopics } = req.body;
+    const { notesId, weakTopics } = req.validated?.body || req.body;
     const userId = String(req.auth.userId);
 
-    if (!weakTopics || !Array.isArray(weakTopics))
-      return res.status(400).json({ error: "weakTopics array is required" });
-
-    const { doc: notes, error } = await validateOwnership(
-      Notes,
-      notesId,
-      userId
-    );
-
-    if (error)
-      return res
-        .status(error === "UNAUTHORIZED" ? 403 : 404)
-        .json({ error: "Access denied or Note not found" });
-
-    const explanations = await geminiService.explainWeakTopics(
-      notes.extractedText,
-      weakTopics
-    );
+    const note = await findOwnedDocument(Notes, notesId, userId, "Note not found");
+    const explanations = await geminiService.explainWeakTopics(note.extractedText, weakTopics);
 
     res.json({ success: true, explanations });
   } catch (err) {
@@ -262,81 +208,85 @@ exports.explainWeakTopics = async (req, res, next) => {
   }
 };
 
-// -----------------------------
-// Generate Share Link
-// -----------------------------
 exports.generateShareLink = async (req, res, next) => {
   try {
-    const { noteId } = req.body;
+    const { noteId, expiresInDays } = req.validated?.body || req.body;
     const userId = String(req.auth.userId);
 
-    const { doc: note, error } = await validateOwnership(Notes, noteId, userId);
+    const note = await findOwnedDocument(Notes, noteId, userId, "Note not found");
+    const history = await getNoteHistory(note._id, 1);
 
-    if (error) return res.status(403).json({ error: "Unauthorized" });
-
-    // If already shared, return existing token
-    if (note.shareToken) {
-      return res.json({ success: true, shareToken: note.shareToken });
+    if (!note.summary && history.length === 0) {
+      throw new HttpError(400, "Generate an AI summary before sharing this note");
     }
 
-    // Generate new random token
-    const token = crypto.randomBytes(16).toString("hex");
-    note.shareToken = token;
-    await note.save();
+    const { shareToken, expiresAt } = await setShareState(note, expiresInDays);
 
-    res.json({ success: true, shareToken: token });
-  } catch (err) {
-    next(err);
-  }
-};
-
-// -----------------------------
-// Get Shared Note (PUBLIC)
-// -----------------------------
-exports.getSharedNote = async (req, res, next) => {
-  try {
-    const { shareToken } = req.params;
-
-    // Find note by token
-    const note = await Notes.findOne({ shareToken });
-
-    if (!note) {
-      return res.status(404).json({ error: "Link expired or invalid" });
-    }
-
-    // Return only safe data
     res.json({
       success: true,
-      note: {
-        fileName: note.fileName,
-        fileType: note.fileType,
-        extractedText: note.extractedText,
-        summary: note.summary,
-        history: note.history,
-        createdAt: note.createdAt,
-      },
+      shareToken,
+      expiresAt,
     });
   } catch (err) {
     next(err);
   }
 };
 
-// -----------------------------
-// Download Extracted Notes PDF (PRIVATE)
-// -----------------------------
-exports.downloadExtractedNotesPdf = async (req, res, next) => {
+exports.revokeShareLink = async (req, res, next) => {
   try {
-    const { noteId } = req.params;
+    const { noteId } = req.validated?.body || req.body;
     const userId = String(req.auth.userId);
 
-    const { doc: note, error } = await validateOwnership(Notes, noteId, userId);
+    const note = await findOwnedDocument(Notes, noteId, userId, "Note not found");
 
-    if (error)
-      return res
-        .status(error === "UNAUTHORIZED" ? 403 : 404)
-        .json({ error: "Access denied or Note not found" });
+    note.share = note.share
+      ? {
+          ...note.share,
+          revokedAt: new Date(),
+        }
+      : {
+          revokedAt: new Date(),
+        };
+    note.shareToken = undefined;
+    await note.save();
 
-    const { pdfBytes, downloadName } = await buildExtractedNotesPdf(note);
+    res.json({
+      success: true,
+      message: "Share link revoked",
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.getSharedNote = async (req, res, next) => {
+  try {
+    const { shareToken } = req.validated?.params || req.params;
+    const note = await findSharedNoteByToken(shareToken);
+    const payload = await buildSharedNotePayload(note);
+
+    res.json({
+      success: true,
+      note: payload,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.downloadExtractedNotesPdf = async (req, res, next) => {
+  try {
+    const { noteId } = req.validated?.params || req.params;
+    const userId = String(req.auth.userId);
+
+    const note = await findOwnedDocument(Notes, noteId, userId, "Note not found");
+    const history = await getNoteHistory(note._id, 1);
+    const pdfNote = {
+      ...note.toObject(),
+      history,
+    };
+
+    const { pdfBytes, downloadName } = await buildExtractedNotesPdf(pdfNote);
 
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `attachment; filename="${downloadName}"`);
@@ -346,19 +296,17 @@ exports.downloadExtractedNotesPdf = async (req, res, next) => {
   }
 };
 
-// -----------------------------
-// Download Extracted Notes PDF (PUBLIC SHARE)
-// -----------------------------
 exports.downloadSharedExtractedNotesPdf = async (req, res, next) => {
   try {
-    const { shareToken } = req.params;
-    const note = await Notes.findOne({ shareToken });
+    const { shareToken } = req.validated?.params || req.params;
+    const note = await findSharedNoteByToken(shareToken);
+    const history = await getNoteHistory(note._id, 1);
+    const pdfNote = {
+      ...note.toObject(),
+      history,
+    };
 
-    if (!note) {
-      return res.status(404).json({ error: "Link expired or invalid" });
-    }
-
-    const { pdfBytes, downloadName } = await buildExtractedNotesPdf(note);
+    const { pdfBytes, downloadName } = await buildExtractedNotesPdf(pdfNote);
 
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `attachment; filename="${downloadName}"`);
@@ -368,18 +316,15 @@ exports.downloadSharedExtractedNotesPdf = async (req, res, next) => {
   }
 };
 
-// -----------------------------
-// Get User Notes (DASHBOARD LIST)
-// -----------------------------
 exports.getUserNotes = async (req, res, next) => {
   try {
     const userId = String(req.auth.userId);
 
-    // OPTIMIZATION: Exclude 'extractedText' and 'history'.
     const notes = await Notes.find({ userId })
-      .select("fileName fileType createdAt updatedAt summary")
-      .sort({ createdAt: -1 })
-      .limit(120);
+      .select("fileName fileType createdAt updatedAt summary latestHistoryAt share.expiresAt share.revokedAt")
+      .sort({ updatedAt: -1 })
+      .limit(120)
+      .lean();
 
     res.json({ success: true, notes });
   } catch (err) {
@@ -387,17 +332,15 @@ exports.getUserNotes = async (req, res, next) => {
   }
 };
 
-// -----------------------------
-// Get User Quiz Attempts
-// -----------------------------
 exports.getUserQuizAttempts = async (req, res, next) => {
   try {
     const userId = String(req.auth.userId);
 
     const attempts = await QuizAttempt.find({ userId })
-      .populate("quizId", "questions")
+      .select("quizId score totalQuestions weakTopics completedAt createdAt")
       .sort({ completedAt: -1 })
-      .limit(20);
+      .limit(20)
+      .lean();
 
     res.json({ success: true, attempts });
   } catch (err) {
@@ -405,22 +348,15 @@ exports.getUserQuizAttempts = async (req, res, next) => {
   }
 };
 
-// -----------------------------
-// Get Single Note (FULL VIEW)
-// -----------------------------
 exports.getSingleNote = async (req, res, next) => {
   try {
-    const { noteId } = req.params;
+    const { noteId } = req.validated?.params || req.params;
     const userId = String(req.auth.userId);
 
-    const { doc: note, error } = await validateOwnership(Notes, noteId, userId);
+    const note = await findOwnedDocument(Notes, noteId, userId, "Note not found");
+    const payload = await buildPrivateNotePayload(note);
 
-    if (error)
-      return res
-        .status(error === "UNAUTHORIZED" ? 403 : 404)
-        .json({ error: "Access denied or Note not found" });
-
-    res.json({ success: true, note });
+    res.json({ success: true, note: payload });
   } catch (err) {
     next(err);
   }
