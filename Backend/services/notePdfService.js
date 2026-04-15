@@ -25,13 +25,26 @@ function sanitizeFileName(name = "note") {
     .trim() || "note";
 }
 
+function sanitizePdfText(value) {
+  return String(value || "")
+    .normalize("NFKC")
+    .replace(/[\u200B-\u200D\uFEFF]/g, "")
+    .replace(/[“”]/g, '"')
+    .replace(/[‘’]/g, "'")
+    .replace(/[–—]/g, "-")
+    .replace(/…/g, "...")
+    .replace(/•/g, "-")
+    .replace(/→/g, "->")
+    .replace(/[^\x09\x0A\x0D\x20-\x7E\xA0-\xFF]/g, "");
+}
+
 function toDisplayText(value, fallback = "Not provided") {
-  const text = String(value || "").trim();
+  const text = sanitizePdfText(value).trim();
   return text || fallback;
 }
 
 function cleanInlineMarkdown(text) {
-  return String(text || "")
+  return sanitizePdfText(text)
     .replace(/\*\*(.*?)\*\*/g, "$1")
     .replace(/__(.*?)__/g, "$1")
     .replace(/`(.*?)`/g, "$1")
@@ -111,7 +124,7 @@ function getInsightPayload(note) {
 }
 
 function parseBlocks(markdownText) {
-  const lines = String(markdownText || "").replace(/\r\n/g, "\n").split("\n");
+  const lines = sanitizePdfText(markdownText).replace(/\r\n/g, "\n").split("\n");
   const blocks = [];
   let paragraph = [];
 
