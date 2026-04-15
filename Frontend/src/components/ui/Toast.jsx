@@ -35,11 +35,11 @@ export default function Toast({ message, type = "info", onClose, duration = 3000
 
   return (
     <div
-      className={`fixed right-4 top-4 z-50 rounded-2xl border px-4 py-3 shadow-[0_24px_60px_-36px_rgba(15,23,42,0.5)] backdrop-blur-xl ${config.shell}`}
+      className={`fixed left-4 right-4 top-4 z-50 rounded-2xl border px-4 py-3 shadow-[0_24px_60px_-36px_rgba(15,23,42,0.5)] backdrop-blur-xl sm:left-auto sm:max-w-md ${config.shell}`}
     >
-      <div className="flex items-center gap-3">
+      <div className="flex items-start gap-3">
         <Icon className="h-4 w-4 shrink-0" />
-        <span className="text-sm font-medium">{message}</span>
+        <span className="min-w-0 flex-1 text-sm font-medium">{message}</span>
         <button
           onClick={onClose}
           className="rounded-xl p-1 transition-colors hover:bg-slate-100 dark:hover:bg-slate-900"

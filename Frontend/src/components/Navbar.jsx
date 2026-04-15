@@ -17,7 +17,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "../utils/ui";
 
 const publicLinks = [
-  { label: "Product", to: "/" },
+  { label: "Product", to: "/home" },
   { label: "Sign In", to: "/sign-in" },
 ];
 
@@ -54,7 +54,7 @@ export default function Navbar() {
 
   const handleLogout = async () => {
     await logout();
-    navigate("/");
+    navigate("/sign-in");
     setIsMobileMenuOpen(false);
   };
 
@@ -62,7 +62,7 @@ export default function Navbar() {
     <>
       <header className="fixed inset-x-0 top-0 z-50 border-b border-white/75 bg-white/78 px-3 py-2.5 shadow-[0_20px_60px_-42px_rgba(15,23,42,0.45)] backdrop-blur-xl dark:border-slate-800/90 dark:bg-slate-950/80 sm:px-6 sm:py-3 lg:px-8">
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-3 px-0 sm:h-16">
-          <Link to="/" className="flex min-w-0 items-center gap-3">
+          <Link to={isAuthenticated ? "/dashboard" : "/home"} className="flex min-w-0 items-center gap-3">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-3xl bg-sky-600 text-white shadow-[0_16px_34px_-18px_rgba(2,132,199,0.7)] sm:h-11 sm:w-11">
               <BrainCircuit className="h-5 w-5" />
             </span>

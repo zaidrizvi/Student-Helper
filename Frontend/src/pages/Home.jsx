@@ -61,7 +61,7 @@ export default function Home() {
                 <span className="text-gradient-sky"> a clear, teachable system.</span>
               </>
             }
-            description="ScholarAI helps students upload notes, generate structured explanations, build quizzes, revisit saved history, and share polished study guides without the mess of scattered tools."
+            description="StudyAI helps students upload notes, generate structured explanations, build quizzes, revisit saved history, and share polished study guides without the mess of scattered tools."
             actions={
               <>
                 <Link to="/sign-up">
@@ -100,7 +100,7 @@ export default function Home() {
                     <BrainCircuit className="h-5 w-5" />
                   </span>
                   <div>
-                    <p className="font-display text-lg font-bold text-slate-900 dark:text-white">ScholarAI workspace</p>
+                    <p className="font-display text-lg font-bold text-slate-900 dark:text-white">StudyAI workspace</p>
                     <p className="text-sm text-slate-500 dark:text-slate-400">Upload. Understand. Practice.</p>
                   </div>
                 </div>

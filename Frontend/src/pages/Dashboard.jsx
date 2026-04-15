@@ -72,7 +72,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] px-4 pb-6 pt-20 text-slate-900 dark:bg-[#0B0F17] dark:text-slate-100 md:px-6 md:pt-22">
-      <div className="mx-auto max-w-7xl space-y-4">
+      <div className="mx-auto max-w-7xl space-y-3">
         <header className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl">
             <span className="inline-flex rounded-full bg-sky-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-sky-700 dark:bg-sky-950/40 dark:text-sky-300">
@@ -131,17 +131,17 @@ export default function Dashboard() {
           />
         </div>
 
-        <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.15fr_0.85fr]">
-          <section className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-[#0D1320]">
-            <div className="mb-3 flex items-start justify-between gap-4">
+        <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.08fr_0.92fr]">
+          <section className="rounded-[18px] border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-[#0D1320]">
+            <div className="mb-2.5 flex items-start justify-between gap-4">
               <div>
                 <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500 dark:bg-slate-800 dark:text-slate-300">
                   Recent Materials
                 </span>
-                <h2 className="mt-3 text-[1.35rem] font-bold tracking-tight text-slate-900 dark:text-white sm:text-[1.55rem]">
+                <h2 className="mt-2.5 text-[1.2rem] font-bold tracking-tight text-slate-900 dark:text-white sm:text-[1.4rem]">
                   Continue a note you already studied
                 </h2>
-                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">
+                <p className="mt-1.5 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">
                   Reopen your latest uploads, revisit generated summaries, or head to the full library for older material.
                 </p>
               </div>
@@ -159,15 +159,15 @@ export default function Dashboard() {
                 <div className="h-8 w-8 animate-spin rounded-full border-4 border-sky-200 border-t-sky-600 dark:border-slate-800 dark:border-t-sky-400" />
               </div>
             ) : notes.length ? (
-              <div className="space-y-2.5">
+              <div className="space-y-2">
                 {notes.slice(0, 4).map((note) => (
                   <motion.button
                     key={note._id}
                     whileHover={{ y: -2 }}
                     onClick={() => navigate(`/notes/${note._id}`)}
-                    className="group flex w-full items-start gap-3 rounded-[18px] border border-slate-200 bg-slate-50 p-3 text-left transition-colors hover:border-sky-300 hover:bg-white dark:border-slate-800 dark:bg-slate-900 dark:hover:border-sky-700 dark:hover:bg-slate-950"
+                    className="group flex w-full items-start gap-3 rounded-[16px] border border-slate-200 bg-slate-50 p-2.5 text-left transition-colors hover:border-sky-300 hover:bg-white dark:border-slate-800 dark:bg-slate-900 dark:hover:border-sky-700 dark:hover:bg-slate-950"
                   >
-                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300">
                       <FileText className="h-4.5 w-4.5" />
                     </div>
                     <div className="min-w-0 flex-1">
@@ -181,7 +181,7 @@ export default function Dashboard() {
                         <Calendar className="h-3.5 w-3.5" />
                         {new Date(note.createdAt).toLocaleDateString()}
                       </div>
-                      <p className="mt-2.5 line-clamp-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
+                      <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
                         {note.summary ? `${stripMarkdown(note.summary).slice(0, 150)}...` : "No summary generated yet."}
                       </p>
                     </div>
@@ -197,16 +197,16 @@ export default function Dashboard() {
           </section>
 
           <div className="space-y-4">
-            <section className="rounded-[22px] bg-sky-600 p-4 text-white shadow-lg shadow-sky-500/20">
+            <section className="rounded-[18px] bg-sky-600 p-3 text-white shadow-lg shadow-sky-500/20">
               <span className="inline-flex rounded-full bg-white/15 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-white">
                 Quick Actions
               </span>
-              <h2 className="mt-3 text-[1.35rem] font-bold tracking-tight sm:text-[1.55rem]">Stay in revision mode.</h2>
-              <p className="mt-2 text-sm leading-6 text-sky-50">
+              <h2 className="mt-2.5 text-[1.2rem] font-bold tracking-tight sm:text-[1.4rem]">Stay in revision mode.</h2>
+              <p className="mt-1.5 text-sm leading-6 text-sky-50">
                 Upload fresh material or revisit your library when you want to turn class notes into something you can actually study from.
               </p>
 
-              <div className="mt-4 space-y-2">
+              <div className="mt-3.5 space-y-2">
                 <QuickAction
                   title="Upload and analyze"
                   desc="Start a new study guide from a lecture file or screenshot."
@@ -220,13 +220,13 @@ export default function Dashboard() {
               </div>
             </section>
 
-            <section className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-[#0D1320]">
+            <section className="rounded-[18px] border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-[#0D1320]">
               <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500 dark:bg-slate-800 dark:text-slate-300">
                 Recent Performance
               </span>
-              <h2 className="mt-3 text-[1.35rem] font-bold tracking-tight text-slate-900 dark:text-white sm:text-[1.55rem]">Quiz feedback at a glance</h2>
+              <h2 className="mt-2.5 text-[1.2rem] font-bold tracking-tight text-slate-900 dark:text-white sm:text-[1.4rem]">Quiz feedback at a glance</h2>
 
-              <div className="mt-4 space-y-2.5">
+              <div className="mt-3.5 space-y-2">
                 {quizAttempts.length ? (
                   quizAttempts.slice(0, 3).map((attempt, index) => {
                     const percentage = Math.round((attempt.score / attempt.totalQuestions) * 100);
@@ -235,7 +235,7 @@ export default function Dashboard() {
                         key={`${attempt.completedAt || attempt.createdAt}-${index}`}
                         initial={{ opacity: 0, y: 12 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="rounded-[18px] border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900"
+                        className="rounded-[16px] border border-slate-200 bg-slate-50 p-2.5 dark:border-slate-800 dark:bg-slate-900"
                       >
                         <div className="flex items-start justify-between gap-4">
                           <div>
@@ -276,14 +276,14 @@ function StatCard({ icon, label, value, meta }) {
     <motion.div
       initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-[20px] border border-slate-200 bg-white p-3.5 shadow-sm dark:border-slate-800 dark:bg-[#0D1320]"
+      className="rounded-[18px] border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-[#0D1320]"
     >
-      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300">
+      <div className="mb-2.5 flex h-9 w-9 items-center justify-center rounded-xl bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300">
         {icon}
       </div>
-      <div className="text-[1.75rem] font-bold tracking-tight text-slate-900 dark:text-white">{value}</div>
-      <p className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-200">{label}</p>
-      <p className="mt-1 text-sm leading-5 text-slate-500 dark:text-slate-400">{meta}</p>
+      <div className="text-[1.5rem] font-bold tracking-tight text-slate-900 dark:text-white">{value}</div>
+      <p className="mt-0.5 text-sm font-semibold text-slate-800 dark:text-slate-200">{label}</p>
+      <p className="mt-0.5 text-sm leading-5 text-slate-500 dark:text-slate-400">{meta}</p>
     </motion.div>
   );
 }
@@ -292,7 +292,7 @@ function QuickAction({ title, desc, onClick }) {
   return (
     <button
       onClick={onClick}
-      className="flex w-full items-center justify-between gap-4 rounded-[18px] border border-white/20 bg-white/10 px-3.5 py-3 text-left transition-colors hover:bg-white/15"
+      className="flex w-full items-center justify-between gap-4 rounded-[16px] border border-white/20 bg-white/10 px-3 py-2.5 text-left transition-colors hover:bg-white/15"
     >
       <div>
         <p className="text-sm font-semibold text-white">{title}</p>

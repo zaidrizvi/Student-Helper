@@ -23,7 +23,8 @@ function AppRoutes() {
       {!hideNavbar ? <Navbar /> : null}
       <AnimatePresence mode="wait" initial={false}>
         <Routes location={location} key={location.pathname}>
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={<SignInPage />} />
+          <Route path="/home" element={<Home />} />
           <Route path="/sign-up" element={<SignUpPage />} />
           <Route path="/sign-in" element={<SignInPage />} />
           <Route path="/dashboard" element={<Dashboard />} />

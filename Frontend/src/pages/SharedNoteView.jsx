@@ -60,7 +60,7 @@ export default function SharedNoteView() {
   if (error) {
     return (
       <PageShell contentClassName="pt-28">
-        <EmptyState icon={Lock} title="Shared note unavailable" description={error} action={<Link to="/"><Button>Open ScholarAI</Button></Link>} />
+        <EmptyState icon={Lock} title="Shared note unavailable" description={error} action={<Link to="/"><Button>Open StudyAI</Button></Link>} />
       </PageShell>
     );
   }
@@ -73,12 +73,12 @@ export default function SharedNoteView() {
             <BrainCircuit className="h-6 w-6" />
           </span>
           <div>
-            <p className="font-display text-2xl font-bold text-slate-950 dark:text-white">ScholarAI shared guide</p>
+            <p className="font-display text-2xl font-bold text-slate-950 dark:text-white">StudyAI shared guide</p>
             <p className="text-sm text-slate-500 dark:text-slate-400">Public study guide view with source text hidden.</p>
           </div>
         </div>
-        <Link to="/sign-up">
-          <Button>
+        <Link to="/sign-up" className="w-full sm:w-auto">
+          <Button className="w-full sm:w-auto">
             <Sparkles className="h-4 w-4" />
             Create your own workspace
           </Button>

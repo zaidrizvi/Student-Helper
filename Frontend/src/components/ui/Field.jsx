@@ -4,7 +4,7 @@ function SharedFieldShell({ label, hint, error, children, labelRight }) {
   return (
     <label className="block space-y-2">
       {(label || labelRight) && (
-        <span className="flex items-center justify-between gap-3 text-sm">
+        <span className="flex flex-col gap-1 text-sm sm:flex-row sm:items-center sm:justify-between sm:gap-3">
           <span className="font-semibold text-slate-700 dark:text-slate-200">{label}</span>
           {labelRight ? (
             <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
