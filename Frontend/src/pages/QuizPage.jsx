@@ -119,26 +119,26 @@ export default function QuizPage() {
   const answeredCount = userAnswers.filter((value) => value !== null).length;
 
   return (
-    <div className="min-h-screen bg-[#0b1628] px-3 pb-6 pt-20 text-slate-100 md:px-5 md:pt-24 lg:px-6">
+    <div className="min-h-screen bg-[#0b1628] px-2.5 pb-5 pt-20 text-slate-100 sm:px-3 sm:pb-6 md:px-5 md:pt-24 lg:px-6">
       <div className="mx-auto max-w-[1440px]">
-        <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
-          <div className="rounded-[24px] border border-slate-700/70 bg-[#142238] p-3.5 shadow-[0_30px_80px_-44px_rgba(2,12,27,0.95)] sm:rounded-[28px] md:p-5">
-            <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <section className="grid gap-3 sm:gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="rounded-[20px] border border-slate-700/70 bg-[#142238] p-3 shadow-[0_30px_80px_-44px_rgba(2,12,27,0.95)] sm:rounded-[28px] sm:p-3.5 md:p-5">
+            <div className="mb-3 flex flex-col gap-3 sm:mb-4 sm:gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">
                 <p className="text-sm text-sky-200">Question {currentQuestion + 1} of {quizData.questions.length}</p>
-                <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#213654]">
+                <div className="mt-2.5 h-2 overflow-hidden rounded-full bg-[#213654] sm:mt-3">
                   <motion.div className="h-full rounded-full bg-[#20b7ff]" initial={{ width: 0 }} animate={{ width: `${progress}%` }} />
                 </div>
               </div>
               <div className="flex items-center justify-between gap-3 sm:block sm:shrink-0 sm:text-right sm:text-sm">
                 <p>{answeredCount}/{quizData.questions.length} answered</p>
-                <button onClick={() => navigate("/dashboard")} className="mt-3 inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-700 bg-[#132238] text-slate-300 transition-colors hover:bg-[#1a2c47] hover:text-white">
+                <button onClick={() => navigate("/dashboard")} className="mt-2.5 inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-700 bg-[#132238] text-slate-300 transition-colors hover:bg-[#1a2c47] hover:text-white sm:mt-3 sm:h-10 sm:w-10 sm:rounded-2xl">
                   <X className="h-4 w-4" />
                 </button>
               </div>
             </div>
 
-            <div className="rounded-[20px] border border-slate-700/70 bg-[#1b2d47] p-3.5 sm:rounded-[24px] md:p-5">
+            <div className="rounded-[16px] border border-slate-700/70 bg-[#1b2d47] p-3 sm:rounded-[24px] sm:p-3.5 md:p-5">
               <SectionLabel className="bg-[#22395a] text-sky-200">Question {currentQuestion + 1}</SectionLabel>
               <AnimatePresence mode="wait">
                 <motion.div
@@ -147,11 +147,11 @@ export default function QuizPage() {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: direction > 0 ? -18 : 18 }}
                 >
-                  <h2 className="mt-4 text-[1.2rem] font-bold leading-tight text-white sm:text-[1.45rem] md:text-[1.9rem]">
+                  <h2 className="mt-3 text-[1.05rem] font-bold leading-tight text-white sm:mt-4 sm:text-[1.45rem] md:text-[1.9rem]">
                     {question.question}
                   </h2>
 
-                  <div className="mt-5 grid gap-2.5">
+                  <div className="mt-4 grid gap-2 sm:mt-5 sm:gap-2.5">
                     {question.options.map((option, index) => {
                       const selected = userAnswers[currentQuestion] === option;
                       return (
@@ -160,14 +160,14 @@ export default function QuizPage() {
                           whileHover={{ y: -1 }}
                           whileTap={{ scale: 0.99 }}
                           onClick={() => handleAnswerSelect(option)}
-                          className={`flex items-start gap-3 rounded-[16px] border px-3 py-3 text-left transition-all sm:rounded-[18px] sm:px-4 ${
+                          className={`flex items-start gap-2.5 rounded-[14px] border px-2.5 py-2.5 text-left transition-all sm:gap-3 sm:rounded-[18px] sm:px-4 sm:py-3 ${
                             selected
                               ? "border-sky-500 bg-[#18314e] shadow-[0_0_0_1px_rgba(56,189,248,0.2)]"
                               : "border-slate-700 bg-[#132238] hover:border-slate-500 hover:bg-[#162844]"
                           }`}
                         >
                           <span
-                            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
+                            className={`flex h-7.5 w-7.5 shrink-0 items-center justify-center rounded-full text-sm font-bold sm:h-8 sm:w-8 ${
                               selected ? "bg-[#20b7ff] text-[#0b1628]" : "bg-[#22395a] text-sky-200"
                             }`}
                           >
@@ -182,11 +182,11 @@ export default function QuizPage() {
               </AnimatePresence>
             </div>
 
-            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="mt-3 flex flex-col gap-2.5 sm:mt-4 sm:gap-3 sm:flex-row sm:items-center sm:justify-between">
               <button
                 onClick={() => paginate(-1)}
                 disabled={currentQuestion === 0}
-                className="inline-flex items-center justify-center gap-2 rounded-[18px] border border-slate-700 bg-[#132238] px-5 py-3 text-sm font-semibold text-slate-300 transition-colors hover:bg-[#1a2c47] hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                className="inline-flex items-center justify-center gap-2 rounded-[16px] border border-slate-700 bg-[#132238] px-4 py-2.5 text-sm font-semibold text-slate-300 transition-colors hover:bg-[#1a2c47] hover:text-white disabled:cursor-not-allowed disabled:opacity-40 sm:rounded-[18px] sm:px-5 sm:py-3"
               >
                 <ArrowLeft className="h-4 w-4" />
                 Previous
@@ -196,7 +196,7 @@ export default function QuizPage() {
                 <button
                   onClick={handleSubmit}
                   disabled={userAnswers.includes(null) || submittingQuiz}
-                  className="inline-flex items-center justify-center gap-2 rounded-[18px] bg-[#20b7ff] px-6 py-3 text-sm font-bold text-[#0b1628] transition-colors hover:bg-[#4ec7ff] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex items-center justify-center gap-2 rounded-[16px] bg-[#20b7ff] px-5 py-2.5 text-sm font-bold text-[#0b1628] transition-colors hover:bg-[#4ec7ff] disabled:cursor-not-allowed disabled:opacity-50 sm:rounded-[18px] sm:px-6 sm:py-3"
                 >
                   {submittingQuiz ? <Loader2 className="h-4 w-4 animate-spin" /> : <Target className="h-4 w-4" />}
                   Submit Quiz
@@ -204,7 +204,7 @@ export default function QuizPage() {
               ) : (
                 <button
                   onClick={() => paginate(1)}
-                  className="inline-flex items-center justify-center gap-2 rounded-[18px] bg-[#20b7ff] px-6 py-3 text-sm font-bold text-[#0b1628] transition-colors hover:bg-[#4ec7ff]"
+                  className="inline-flex items-center justify-center gap-2 rounded-[16px] bg-[#20b7ff] px-5 py-2.5 text-sm font-bold text-[#0b1628] transition-colors hover:bg-[#4ec7ff] sm:rounded-[18px] sm:px-6 sm:py-3"
                 >
                   Next
                   <ArrowRight className="h-4 w-4" />
@@ -215,10 +215,10 @@ export default function QuizPage() {
             <AnimatePresence>{pageError ? <div className="mt-4"><InlineMessage message={pageError} tone="error" /></div> : null}</AnimatePresence>
           </div>
 
-          <aside className="space-y-4">
-            <div className="rounded-[24px] border border-slate-700/70 bg-[#142238] p-4 shadow-[0_30px_80px_-44px_rgba(2,12,27,0.95)] sm:rounded-[28px]">
+          <aside className="space-y-3 sm:space-y-4">
+            <div className="rounded-[20px] border border-slate-700/70 bg-[#142238] p-3 shadow-[0_30px_80px_-44px_rgba(2,12,27,0.95)] sm:rounded-[28px] sm:p-4">
               <SectionLabel className="bg-[#22395a] text-sky-200">Quiz Status</SectionLabel>
-              <div className="mt-4 rounded-[22px] border border-slate-700 bg-[#1b2d47] p-4">
+              <div className="mt-3 rounded-[18px] border border-slate-700 bg-[#1b2d47] p-3 sm:mt-4 sm:rounded-[22px] sm:p-4">
                 <div className="flex items-center justify-between">
                   <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Progress</p>
                   <p className="text-sm font-semibold text-sky-200">{Math.round(progress)}%</p>
@@ -226,12 +226,12 @@ export default function QuizPage() {
                 <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#213654]">
                   <motion.div className="h-full rounded-full bg-[#20b7ff]" initial={{ width: 0 }} animate={{ width: `${progress}%` }} />
                 </div>
-                <div className="mt-4 grid grid-cols-2 gap-3">
-                  <div className="rounded-[16px] bg-[#132238] p-3">
+                <div className="mt-3 grid grid-cols-2 gap-2 sm:mt-4 sm:gap-3">
+                  <div className="rounded-[14px] bg-[#132238] p-2.5 sm:rounded-[16px] sm:p-3">
                     <p className="text-sm text-slate-400">Answered</p>
                     <p className="mt-1 text-xl font-bold text-white">{answeredCount}</p>
                   </div>
-                  <div className="rounded-[16px] bg-[#132238] p-3">
+                  <div className="rounded-[14px] bg-[#132238] p-2.5 sm:rounded-[16px] sm:p-3">
                     <p className="text-sm text-slate-400">Remaining</p>
                     <p className="mt-1 text-xl font-bold text-white">{quizData.questions.length - answeredCount}</p>
                   </div>
@@ -239,13 +239,13 @@ export default function QuizPage() {
               </div>
             </div>
 
-            <div className="rounded-[24px] border border-slate-700/70 bg-[#142238] p-4 shadow-[0_30px_80px_-44px_rgba(2,12,27,0.95)] sm:rounded-[28px]">
-              <div className="mb-4 flex items-center justify-between gap-3">
+            <div className="rounded-[20px] border border-slate-700/70 bg-[#142238] p-3 shadow-[0_30px_80px_-44px_rgba(2,12,27,0.95)] sm:rounded-[28px] sm:p-4">
+              <div className="mb-3 flex items-center justify-between gap-3 sm:mb-4">
                 <SectionLabel className="bg-[#22395a] text-sky-200">Questions</SectionLabel>
                 <p className="text-xs uppercase tracking-[0.18em] text-slate-400">{answeredCount}/{quizData.questions.length} answered</p>
               </div>
 
-              <div className="grid grid-cols-5 gap-2">
+              <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
                 {quizData.questions.map((_, index) => {
                   const active = currentQuestion === index;
                   const answered = userAnswers[index] !== null;
@@ -256,7 +256,7 @@ export default function QuizPage() {
                         setDirection(index > currentQuestion ? 1 : -1);
                         setCurrentQuestion(index);
                       }}
-                      className={`rounded-[12px] px-0 py-2.5 text-sm font-bold transition-all sm:rounded-[14px] sm:py-3 ${
+                      className={`rounded-[10px] px-0 py-2 text-sm font-bold transition-all sm:rounded-[14px] sm:py-3 ${
                         active
                           ? "bg-[#20b7ff] text-[#0b1628]"
                           : answered
@@ -273,7 +273,7 @@ export default function QuizPage() {
               <button
                 onClick={handleSubmit}
                 disabled={userAnswers.includes(null) || submittingQuiz}
-                className="mt-5 flex w-full items-center justify-center gap-2 rounded-[18px] bg-emerald-500 px-5 py-3.5 text-sm font-bold text-[#07211a] transition-colors hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-50"
+                className="mt-4 flex w-full items-center justify-center gap-2 rounded-[16px] bg-emerald-500 px-5 py-3 text-sm font-bold text-[#07211a] transition-colors hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-50 sm:mt-5 sm:rounded-[18px] sm:py-3.5"
               >
                 {submittingQuiz ? <Loader2 className="h-5 w-5 animate-spin" /> : <CheckCircle2 className="h-5 w-5" />}
                 Submit Exam
@@ -291,9 +291,9 @@ function ResultsView({ quizResults, onRetake, onExit, notesId }) {
   const passing = percentage >= 70;
 
   return (
-    <div className="min-h-screen bg-[#0b1628] px-3 pb-8 pt-20 text-slate-100 md:px-5 md:pt-24 lg:px-6">
-      <div className="mx-auto flex max-w-[1320px] flex-col gap-3">
-        <Panel className="shrink-0 p-3 text-center sm:p-4">
+    <div className="min-h-screen bg-[#0b1628] px-2.5 pb-6 pt-20 text-slate-100 sm:px-3 sm:pb-8 md:px-5 md:pt-24 lg:px-6">
+      <div className="mx-auto flex max-w-[1320px] flex-col gap-2.5 sm:gap-3">
+        <Panel className="shrink-0 p-2.5 text-center sm:p-4">
         
           <h1 className="mt-2 font-display text-[1.7rem] font-bold text-slate-950 dark:text-white sm:text-[2rem] md:text-[2.3rem]">
             {passing ? "Great work" : "Keep building this topic"}
@@ -305,14 +305,14 @@ function ResultsView({ quizResults, onRetake, onExit, notesId }) {
           </p>
         </Panel>
 
-        <div className="grid shrink-0 gap-2.5 md:grid-cols-3">
+        <div className="grid shrink-0 gap-2 md:grid-cols-3 sm:gap-2.5">
           <ResultStat icon={Target} label="Score" value={`${percentage}%`} sub={`${quizResults.score} / ${quizResults.totalQuestions} correct`} />
           <ResultStat icon={BarChart3} label="Accuracy" value={percentage >= 80 ? "High" : percentage >= 60 ? "Building" : "Low"} sub="Relative to submitted answers" />
           <ResultStat icon={Trophy} label="Status" value={passing ? "Passed" : "Review needed"} sub="Based on a 70% target" />
         </div>
 
         {quizResults.weakTopics?.length ? (
-          <Panel className="p-3 sm:p-4">
+          <Panel className="p-2.5 sm:p-4">
             <div className="mb-3 shrink-0">
               <SectionLabel>Weak topics</SectionLabel>
               <h2 className="mt-2 font-display text-[1.45rem] font-bold text-slate-950 dark:text-white sm:text-[1.9rem]">
@@ -323,7 +323,7 @@ function ResultsView({ quizResults, onRetake, onExit, notesId }) {
           </Panel>
         ) : null}
 
-        <div className="flex shrink-0 flex-col gap-2.5 pb-1 sm:flex-row sm:justify-center">
+        <div className="flex shrink-0 flex-col gap-2 pb-1 sm:flex-row sm:justify-center sm:gap-2.5">
           <Button variant="secondary" onClick={onExit} size="md">Back to dashboard</Button>
           <Button onClick={onRetake} size="md"><RefreshCcw className="h-4 w-4" />Retake quiz</Button>
         </div>
@@ -334,11 +334,11 @@ function ResultsView({ quizResults, onRetake, onExit, notesId }) {
 
 function ResultStat({ icon: Icon, label, value, sub }) {
   return (
-    <Panel className="p-3.5">
-      <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300">
+    <Panel className="p-3 sm:p-3.5">
+      <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300 sm:h-9 sm:w-9 sm:rounded-2xl">
         <Icon className="h-4 w-4" />
       </span>
-      <p className="mt-2.5 font-display text-[1.8rem] font-bold text-slate-950 dark:text-white">{value}</p>
+      <p className="mt-2 font-display text-[1.55rem] font-bold text-slate-950 dark:text-white sm:mt-2.5 sm:text-[1.8rem]">{value}</p>
       <p className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-200">{label}</p>
       <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">{sub}</p>
     </Panel>
@@ -366,8 +366,8 @@ function ExplainWeakTopicsReview({ notesId, weakTopics }) {
   }, [notesId, weakTopics]);
 
   return (
-    <div className="grid gap-2.5">
-      {weakTopics.map((topic, index) => <div key={topic} className="overflow-hidden rounded-[18px] border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900"><button onClick={() => setExpanded(expanded === index ? null : index)} className="flex w-full items-center justify-between gap-4 px-4 py-3 text-left"><div className="flex items-center gap-3"><span className="flex h-8 w-8 items-center justify-center rounded-2xl bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"><Lightbulb className="h-4 w-4" /></span><span className="font-semibold text-slate-900 dark:text-white">{topic}</span></div><ChevronRight className={`h-5 w-5 text-slate-400 transition-transform ${expanded === index ? "rotate-90" : ""}`} /></button><AnimatePresence>{expanded === index ? <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="border-t border-slate-200 dark:border-slate-800"><div className="p-3.5 text-sm leading-6 text-slate-600 dark:text-slate-300">{loading ? <div className="flex items-center gap-2 text-sky-700 dark:text-sky-300"><Loader2 className="h-4 w-4 animate-spin" />Preparing explanation...</div> : <Markdown>{explanations[topic] || "A more detailed explanation is still being prepared for this topic."}</Markdown>}</div></motion.div> : null}</AnimatePresence></div>)}
+    <div className="grid gap-2 sm:gap-2.5">
+      {weakTopics.map((topic, index) => <div key={topic} className="overflow-hidden rounded-[16px] border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900 sm:rounded-[18px]"><button onClick={() => setExpanded(expanded === index ? null : index)} className="flex w-full items-center justify-between gap-4 px-3 py-2.5 text-left sm:px-4 sm:py-3"><div className="flex items-center gap-3"><span className="flex h-7.5 w-7.5 items-center justify-center rounded-xl bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 sm:h-8 sm:w-8 sm:rounded-2xl"><Lightbulb className="h-4 w-4" /></span><span className="font-semibold text-slate-900 dark:text-white">{topic}</span></div><ChevronRight className={`h-5 w-5 text-slate-400 transition-transform ${expanded === index ? "rotate-90" : ""}`} /></button><AnimatePresence>{expanded === index ? <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="border-t border-slate-200 dark:border-slate-800"><div className="p-3 text-sm leading-6 text-slate-600 dark:text-slate-300 sm:p-3.5">{loading ? <div className="flex items-center gap-2 text-sky-700 dark:text-sky-300"><Loader2 className="h-4 w-4 animate-spin" />Preparing explanation...</div> : <Markdown>{explanations[topic] || "A more detailed explanation is still being prepared for this topic."}</Markdown>}</div></motion.div> : null}</AnimatePresence></div>)}
       {loading && !weakTopics.length ? <InlineMessage message="Loading weak-topic explanations..." tone="loading" /> : null}
       {!loading && !weakTopics.length ? <EmptyState icon={AlertCircle} compact title="No weak topics detected" description="This attempt did not flag any specific weak areas." /> : null}
     </div>
