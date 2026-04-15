@@ -25,7 +25,7 @@ import {
   Settings2,
   Download,
   Image as ImageIcon,
-  ArrowLeft,
+  MessagesSquare,
 } from "lucide-react";
 
 const MAX_FILE_SIZE = 15 * 1024 * 1024;
@@ -46,6 +46,21 @@ const MODES = [
   { label: "Exam Prep", value: "ultra", desc: "Questions, answers & tips", icon: Search },
 ];
 
+const INPUT_MODES = [
+  {
+    value: "notes",
+    label: "Summarize Notes",
+    desc: "Use uploaded material as the main source",
+    icon: FileText,
+  },
+  {
+    value: "ask",
+    label: "Ask AI",
+    desc: "Get a direct answer even without uploading notes",
+    icon: MessagesSquare,
+  },
+];
+
 const preprocessMarkdown = (text) => {
   if (!text) return "";
   return text
@@ -55,6 +70,7 @@ const preprocessMarkdown = (text) => {
 };
 
 export default function UploadNotes() {
+  const [inputMode, setInputMode] = useState("notes");
   const [file, setFile] = useState(null);
   const [customPrompt, setCustomPrompt] = useState("");
   const [mode, setMode] = useState("normal");
@@ -153,8 +169,13 @@ export default function UploadNotes() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     let currentNotesId = activeNote?.id;
+    const wantsPromptOnly = inputMode === "ask";
 
-    if (!file && !customPrompt && !currentNotesId) {
+    if (wantsPromptOnly && !customPrompt.trim()) {
+      return showMsg("Enter a custom prompt to ask AI directly.", "error");
+    }
+
+    if (!wantsPromptOnly && !file && !customPrompt && !currentNotesId) {
       return showMsg("Upload a file or enter custom instructions to continue.", "error");
     }
 
@@ -162,7 +183,7 @@ export default function UploadNotes() {
     setGeminiOutput("");
 
     try {
-      if (file) {
+      if (file && !wantsPromptOnly) {
         showMsg("Uploading document...", "loading");
         const formData = new FormData();
         formData.append("file", file);
@@ -181,7 +202,7 @@ export default function UploadNotes() {
         prompt: customPrompt,
         mode,
       };
-      if (currentNotesId) {
+      if (currentNotesId && !wantsPromptOnly) {
         summarizePayload.notesId = currentNotesId;
       }
 
@@ -273,20 +294,55 @@ export default function UploadNotes() {
       <div className="mx-auto flex max-w-[1420px] flex-col gap-3 px-3 pb-4 sm:gap-4 sm:px-4 md:px-6 md:pb-5">
         <main className="flex min-h-[calc(100vh-8.5rem)] flex-col gap-3 sm:gap-4 lg:flex-row">
           <motion.div
-            className={`flex min-h-0 flex-1 flex-col overflow-y-auto rounded-[18px] border border-slate-200 bg-white shadow-sm custom-scrollbar dark:border-slate-800 dark:bg-[#0D1320] sm:rounded-[22px] lg:max-w-[340px] xl:max-w-[360px] ${
+            className={`flex min-h-0 flex-1 flex-col overflow-y-auto rounded-[18px] border border-slate-200 bg-white shadow-sm custom-scrollbar dark:border-slate-800 dark:bg-[#0D1320] sm:rounded-[22px] lg:max-w-[340px] lg:self-start xl:max-w-[360px] ${
               isFocused ? "pointer-events-none opacity-0 lg:-ml-[480px]" : "opacity-100"
             }`}
           >
             <div className="space-y-3 p-3 sm:space-y-3.5 sm:p-3.5 lg:p-4">
               <div className="space-y-1.5 sm:space-y-2">
                 <h2 className="text-lg font-bold text-slate-900 dark:text-white">New Analysis</h2>
-                <p className="text-sm text-slate-500 dark:text-slate-400">Configure your study material below.</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  {inputMode === "ask"
+                    ? "Ask a direct question and get a tutor-style answer."
+                    : "Configure your study material below."}
+                </p>
               </div>
 
               <div className="space-y-3">
+                <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-[10px] dark:bg-slate-800">1</span>
+                  Choose Workflow
+                </label>
+                <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2 sm:gap-2">
+                  {INPUT_MODES.map((entry) => {
+                    const Icon = entry.icon;
+                    const active = inputMode === entry.value;
+                    return (
+                      <button
+                        key={entry.value}
+                        onClick={() => setInputMode(entry.value)}
+                        className={`rounded-[14px] border p-2 text-left transition-all sm:rounded-[18px] sm:p-2.5 ${
+                          active
+                            ? "border-sky-500 bg-slate-900 text-white dark:bg-sky-600 dark:border-sky-500"
+                            : "border-slate-200 bg-slate-50 hover:border-sky-300 hover:bg-white dark:border-slate-800 dark:bg-slate-900 dark:hover:border-sky-700"
+                        }`}
+                      >
+                        <div className="mb-1 flex items-center justify-between sm:mb-1.5">
+                          <Icon className={`h-4 w-4 ${active ? "text-sky-200" : "text-slate-400"}`} />
+                          {active ? <div className="h-2 w-2 rounded-full bg-emerald-400" /> : null}
+                        </div>
+                        <div className={`text-sm font-semibold ${active ? "text-white" : "text-slate-900 dark:text-slate-200"}`}>{entry.label}</div>
+                        <div className={`mt-0.5 text-xs leading-5 sm:mt-1 ${active ? "text-slate-200" : "text-slate-500 dark:text-slate-400"}`}>{entry.desc}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {inputMode === "notes" ? <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-[10px] dark:bg-slate-800">1</span>
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-[10px] dark:bg-slate-800">2</span>
                     Upload Material
                   </label>
                   {file ? (
@@ -308,6 +364,8 @@ export default function UploadNotes() {
                     handleFile(e);
                   }}
                   className={`group relative min-h-[92px] rounded-[16px] border-2 border-dashed p-2.5 text-center transition-all sm:min-h-[104px] sm:rounded-[20px] sm:p-3 ${
+                    inputMode === "ask" ? "opacity-60" : ""
+                  } ${
                     isDragging
                       ? "border-sky-500 bg-sky-50 dark:bg-sky-950/20"
                       : file
@@ -320,7 +378,8 @@ export default function UploadNotes() {
                     type="file"
                     onChange={handleFile}
                     accept=".pdf,.docx,.txt,.jpg,.jpeg,.png,.webp"
-                    className="absolute inset-0 z-20 cursor-pointer opacity-0"
+                    disabled={inputMode === "ask"}
+                    className="absolute inset-0 z-20 cursor-pointer opacity-0 disabled:pointer-events-none"
                   />
 
                   {file ? (
@@ -342,19 +401,21 @@ export default function UploadNotes() {
                         <UploadCloud className="h-4.5 w-4.5 sm:h-5 sm:w-5" />
                       </div>
                       <p className="text-base font-semibold tracking-tight text-slate-900 dark:text-white sm:text-[1.05rem]">
-                        Drop your file here or click to browse
+                        {inputMode === "ask" ? "Optional in Ask AI mode" : "Drop your file here or click to browse"}
                       </p>
                       <p className="mt-1 max-w-sm text-sm leading-5 text-slate-500 dark:text-slate-400 sm:mt-1.5 sm:leading-6">
-                        PDF, DOCX, TXT, JPG, PNG, and WEBP up to 15MB.
+                        {inputMode === "ask"
+                          ? "You can skip file upload and ask a direct question below."
+                          : "PDF, DOCX, TXT, JPG, PNG, and WEBP up to 15MB."}
                       </p>
                     </div>
                   )}
                 </div>
-              </div>
+              </div> : null}
 
               <div className="space-y-3">
                 <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-[10px] dark:bg-slate-800">2</span>
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-[10px] dark:bg-slate-800">{inputMode === "ask" ? "2" : "3"}</span>
                   Learning Mode
                 </label>
                 <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2 sm:gap-2">
@@ -381,14 +442,18 @@ export default function UploadNotes() {
 
               <div className="space-y-3">
                 <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-[10px] dark:bg-slate-800">3</span>
-                  Custom Instructions
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-[10px] dark:bg-slate-800">{inputMode === "ask" ? "3" : "4"}</span>
+                  {inputMode === "ask" ? "Ask Anything" : "Custom Instructions"}
                 </label>
                 <div className="relative">
                   <textarea
                     value={customPrompt}
                     onChange={(e) => setCustomPrompt(e.target.value)}
-                    placeholder="E.g. Explain the formulas step by step, focus on likely exam questions..."
+                    placeholder={
+                      inputMode === "ask"
+                        ? "E.g. Explain tautology in depth, compare TCP vs UDP, teach recursion from scratch..."
+                        : "E.g. Explain the formulas step by step, focus on likely exam questions..."
+                    }
                     className="min-h-[78px] w-full resize-none rounded-[18px] border border-slate-200 bg-slate-50 p-3 pr-12 text-sm text-slate-800 outline-none transition-all placeholder:text-slate-400 focus:border-sky-400 focus:bg-white dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-sky-600 dark:focus:bg-slate-900 sm:min-h-[86px] sm:rounded-[22px] sm:p-3.5"
                   />
                   <Settings2 className="pointer-events-none absolute bottom-4 right-4 h-4 w-4 text-slate-300 dark:text-slate-600" />
@@ -398,11 +463,11 @@ export default function UploadNotes() {
               <div className="sticky bottom-0 space-y-2.5 border-t border-slate-100 bg-white pt-3.5 dark:border-slate-800 dark:bg-[#0D1320] sm:space-y-3 sm:pt-4">
                 <button
                   onClick={handleSubmit}
-                  disabled={loading || (!file && !customPrompt.trim() && !activeNote?.id)}
+                  disabled={loading || (inputMode === "ask" ? !customPrompt.trim() : (!file && !customPrompt.trim() && !activeNote?.id))}
                   className="flex w-full items-center justify-center gap-2 rounded-2xl bg-sky-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-sky-500/20 transition-all hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
                 >
                   {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                  {loading ? "Analyzing..." : "Generate Analysis"}
+                  {loading ? (inputMode === "ask" ? "Asking AI..." : "Analyzing...") : (inputMode === "ask" ? "Ask AI" : "Generate Analysis")}
                 </button>
 
                 <AnimatePresence mode="wait">
@@ -485,7 +550,9 @@ export default function UploadNotes() {
                   </div>
                   <h3 className="text-[1.5rem] font-bold tracking-tight text-slate-900 dark:text-white sm:text-[1.8rem]">Your study guide will appear here</h3>
                   <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-500 dark:text-slate-400 md:text-base">
-                    Upload a file, choose a learning depth, and generate a structured study guide with clear next steps.
+                    {inputMode === "ask"
+                      ? "Ask a direct question and get a clear AI explanation here."
+                      : "Upload a file, choose a learning depth, and generate a structured study guide with clear next steps."}
                   </p>
                 </div>
               ) : null}
