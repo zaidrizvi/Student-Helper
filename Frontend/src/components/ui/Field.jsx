@@ -37,7 +37,7 @@ export function InputField({
     <SharedFieldShell label={label} hint={hint} error={error} labelRight={labelRight}>
       <div
         className={cn(
-          "group relative rounded-2xl border border-slate-200 bg-white transition-all focus-within:border-sky-400 focus-within:ring-4 focus-within:ring-sky-100 dark:border-slate-800 dark:bg-slate-950 dark:focus-within:border-sky-500 dark:focus-within:ring-sky-500/10",
+          "group relative rounded-xl border border-slate-200 bg-white transition-all focus-within:border-sky-400 focus-within:ring-4 focus-within:ring-sky-100 dark:border-slate-800 dark:bg-slate-950 dark:focus-within:border-sky-500 dark:focus-within:ring-sky-500/10 sm:rounded-2xl",
           error && "border-rose-300 focus-within:border-rose-400 focus-within:ring-rose-100 dark:border-rose-800 dark:focus-within:border-rose-500 dark:focus-within:ring-rose-500/10",
           className
         )}
@@ -47,8 +47,8 @@ export function InputField({
         ) : null}
         <input
           className={cn(
-            "h-12 w-full rounded-2xl bg-transparent px-4 text-sm text-slate-900 outline-none placeholder:text-slate-400 dark:text-slate-100",
-            Icon && "pl-12",
+            "h-11 w-full rounded-xl bg-transparent px-3 text-sm text-slate-900 outline-none placeholder:text-slate-400 dark:text-slate-100 sm:h-12 sm:rounded-2xl sm:px-4",
+            Icon && "pl-12 sm:pl-12",
             inputClassName
           )}
           {...props}
@@ -73,7 +73,7 @@ export function TextareaField({
     <SharedFieldShell label={label} hint={hint} error={error} labelRight={labelRight}>
       <div
         className={cn(
-          "group relative rounded-3xl border border-slate-200 bg-white transition-all focus-within:border-sky-400 focus-within:ring-4 focus-within:ring-sky-100 dark:border-slate-800 dark:bg-slate-950 dark:focus-within:border-sky-500 dark:focus-within:ring-sky-500/10",
+          "group relative rounded-2xl border border-slate-200 bg-white transition-all focus-within:border-sky-400 focus-within:ring-4 focus-within:ring-sky-100 dark:border-slate-800 dark:bg-slate-950 dark:focus-within:border-sky-500 dark:focus-within:ring-sky-500/10 sm:rounded-3xl",
           error && "border-rose-300 focus-within:border-rose-400 focus-within:ring-rose-100 dark:border-rose-800 dark:focus-within:border-rose-500 dark:focus-within:ring-rose-500/10",
           className
         )}
@@ -84,7 +84,7 @@ export function TextareaField({
         <textarea
           rows={rows}
           className={cn(
-            "w-full resize-none rounded-3xl bg-transparent px-4 py-4 text-sm leading-6 text-slate-900 outline-none placeholder:text-slate-400 dark:text-slate-100",
+            "w-full resize-none rounded-2xl bg-transparent px-3 py-3 text-sm leading-6 text-slate-900 outline-none placeholder:text-slate-400 dark:text-slate-100 sm:rounded-3xl sm:px-4 sm:py-4",
             Icon && "pr-12",
             inputClassName
           )}

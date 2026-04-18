@@ -18,10 +18,9 @@ export default function AuthShell({
   className,
 }) {
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[var(--app-bg)] px-4 py-20 dark:bg-[var(--app-bg-dark)] sm:px-6 sm:py-24">
+    <div className="relative min-h-screen overflow-hidden bg-[var(--app-bg)] px-3 py-16 dark:bg-[var(--app-bg-dark)] sm:px-6 sm:py-24">
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute left-1/2 top-0 h-[34rem] w-[34rem] -translate-x-1/2 rounded-full bg-sky-200/45 blur-[120px] dark:bg-sky-500/12" />
-        <div className="absolute bottom-[-8rem] right-[-4rem] h-80 w-80 rounded-full bg-cyan-100/50 blur-[110px] dark:bg-cyan-400/10" />
+        <div className="absolute left-1/2 top-0 hidden h-[34rem] w-[34rem] -translate-x-1/2 rounded-full bg-sky-200/45 blur-[120px] dark:bg-sky-500/12 sm:block" />
       </div>
       <div className="relative z-10 mx-auto grid w-full max-w-6xl gap-8 lg:grid-cols-[1.04fr_0.96fr] lg:items-center">
         <motion.div
@@ -80,11 +79,11 @@ export default function AuthShell({
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           className={cn(
-            "rounded-[32px] border border-white/80 bg-white/92 p-6 shadow-[0_38px_90px_-54px_rgba(15,23,42,0.55)] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/90 sm:p-8",
+            "rounded-[20px] border border-white/80 bg-white/94 p-4 shadow-[0_24px_70px_-50px_rgba(15,23,42,0.5)] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/90 sm:rounded-[32px] sm:p-8",
             className
           )}
         >
-          <div className="mb-8 space-y-3">
+          <div className="mb-6 space-y-2.5 sm:mb-8 sm:space-y-3">
             <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600 dark:bg-slate-900 dark:text-slate-300 lg:hidden">
               <BrainCircuit className="h-4 w-4 text-sky-600 dark:text-sky-400" />
               StudyAI
@@ -92,12 +91,12 @@ export default function AuthShell({
             <h2 className="font-display text-2xl font-bold tracking-tight text-slate-950 dark:text-white sm:text-3xl">
               {title}
             </h2>
-            <p className="text-sm leading-7 text-slate-500 dark:text-slate-400">{description}</p>
+            <p className="text-sm leading-6 text-slate-500 dark:text-slate-400 sm:leading-7">{description}</p>
           </div>
 
           {children}
 
-          {footer ? <div className="mt-8 border-t border-slate-200 pt-6 dark:border-slate-800">{footer}</div> : null}
+          {footer ? <div className="mt-6 border-t border-slate-200 pt-5 dark:border-slate-800 sm:mt-8 sm:pt-6">{footer}</div> : null}
         </motion.div>
       </div>
     </div>

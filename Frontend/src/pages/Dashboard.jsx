@@ -71,17 +71,17 @@ export default function Dashboard() {
   const notesThisWeek = notes.filter((note) => new Date(note.createdAt) > oneWeekAgo).length;
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] px-3 pb-5 pt-20 text-slate-900 dark:bg-[#0B0F17] dark:text-slate-100 sm:px-4 md:px-6 md:pt-22">
-      <div className="mx-auto max-w-7xl space-y-2.5 sm:space-y-3">
+    <div className="min-h-screen bg-[#F8FAFC] px-3 pb-24 pt-[4.5rem] text-slate-900 dark:bg-[#0B0F17] dark:text-slate-100 sm:px-4 sm:pb-5 md:px-6 md:pt-[5.5rem]">
+      <div className="mx-auto max-w-7xl space-y-3 sm:space-y-4">
         <header className="flex flex-col gap-2.5 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl">
-            <span className="inline-flex rounded-full bg-sky-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-sky-700 dark:bg-sky-950/40 dark:text-sky-300">
+            <span className="inline-flex rounded-full bg-sky-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-sky-700 dark:bg-sky-950/40 dark:text-sky-300 sm:px-3 sm:text-[11px] sm:tracking-[0.22em]">
               {today}
             </span>
-            <h1 className="mt-2.5 text-[2rem] font-bold tracking-tight text-slate-900 dark:text-white sm:text-[2.7rem] md:text-[3rem]">
+            <h1 className="mt-2 text-[1.75rem] font-bold tracking-tight text-slate-900 dark:text-white sm:mt-2.5 sm:text-[2.7rem] md:text-[3rem]">
               Welcome back, <span className="text-sky-500">{firstName}</span>
             </h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">
+            <p className="mt-2 hidden max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400 sm:block">
               Your workspace keeps recent material, quiz performance, and next actions in one place so you can move from upload to revision without hunting around.
             </p>
           </div>
@@ -104,7 +104,7 @@ export default function Dashboard() {
           </div>
         </header>
 
-        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-3 xl:grid-cols-4">
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-3 xl:grid-cols-4">
           <StatCard
             icon={<BookOpen className="h-5 w-5" />}
             label="Total notes"
@@ -135,13 +135,13 @@ export default function Dashboard() {
           <section className="rounded-[16px] border border-slate-200 bg-white p-2.5 shadow-sm dark:border-slate-800 dark:bg-[#0D1320] sm:rounded-[18px] sm:p-3">
             <div className="mb-2 flex items-start justify-between gap-3 sm:mb-2.5 sm:gap-4">
               <div>
-                <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 dark:bg-slate-800 dark:text-slate-300 sm:px-3 sm:text-[11px] sm:tracking-[0.22em]">
+                <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500 dark:bg-slate-800 dark:text-slate-300 sm:px-3 sm:text-[11px] sm:tracking-[0.22em]">
                   Recent Materials
                 </span>
-                <h2 className="mt-2 text-[1.08rem] font-bold tracking-tight text-slate-900 dark:text-white sm:text-[1.4rem]">
+                <h2 className="mt-2 text-[1.05rem] font-bold tracking-tight text-slate-900 dark:text-white sm:text-[1.4rem]">
                   Continue a note you already studied
                 </h2>
-                <p className="mt-1.5 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">
+                <p className="mt-1.5 hidden max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400 sm:block">
                   Reopen your latest uploads, revisit generated summaries, or head to the full library for older material.
                 </p>
               </div>
@@ -167,7 +167,7 @@ export default function Dashboard() {
                     onClick={() => navigate(`/notes/${note._id}`)}
                     className="group flex w-full items-start gap-2.5 rounded-[14px] border border-slate-200 bg-slate-50 p-2.5 text-left transition-colors hover:border-sky-300 hover:bg-white dark:border-slate-800 dark:bg-slate-900 dark:hover:border-sky-700 dark:hover:bg-slate-950 sm:gap-3 sm:rounded-[16px]"
                   >
-                    <div className="flex h-8.5 w-8.5 items-center justify-center rounded-xl bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300 sm:h-9 sm:w-9">
+                    <div className="flex h-[2.125rem] w-[2.125rem] items-center justify-center rounded-xl bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300 sm:h-9 sm:w-9">
                       <FileText className="h-4.5 w-4.5" />
                     </div>
                     <div className="min-w-0 flex-1">
@@ -181,7 +181,7 @@ export default function Dashboard() {
                         <Calendar className="h-3.5 w-3.5" />
                         {new Date(note.createdAt).toLocaleDateString()}
                       </div>
-                      <p className="mt-1.5 line-clamp-2 text-sm leading-6 text-slate-600 dark:text-slate-300 sm:mt-2">
+                      <p className="mt-1.5 hidden line-clamp-2 text-sm leading-6 text-slate-600 dark:text-slate-300 sm:mt-2 sm:block">
                         {note.summary ? `${stripMarkdown(note.summary).slice(0, 150)}...` : "No summary generated yet."}
                       </p>
                     </div>
@@ -202,7 +202,7 @@ export default function Dashboard() {
                 Quick Actions
               </span>
               <h2 className="mt-2 text-[1.08rem] font-bold tracking-tight sm:text-[1.4rem]">Stay in revision mode.</h2>
-              <p className="mt-1.5 text-sm leading-6 text-sky-50">
+              <p className="mt-1.5 hidden text-sm leading-6 text-sky-50 sm:block">
                 Upload fresh material or revisit your library when you want to turn class notes into something you can actually study from.
               </p>
 
@@ -281,9 +281,9 @@ function StatCard({ icon, label, value, meta }) {
       <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300 sm:mb-2.5 sm:h-9 sm:w-9 sm:rounded-xl">
         {icon}
       </div>
-      <div className="text-[1.35rem] font-bold tracking-tight text-slate-900 dark:text-white sm:text-[1.5rem]">{value}</div>
-      <p className="mt-0.5 text-sm font-semibold text-slate-800 dark:text-slate-200">{label}</p>
-      <p className="mt-0.5 text-sm leading-5 text-slate-500 dark:text-slate-400">{meta}</p>
+      <div className="text-[1.3rem] font-bold tracking-tight text-slate-900 dark:text-white sm:text-[1.5rem]">{value}</div>
+      <p className="mt-0.5 text-xs font-semibold text-slate-800 dark:text-slate-200 sm:text-sm">{label}</p>
+      <p className="mt-0.5 hidden text-sm leading-5 text-slate-500 dark:text-slate-400 sm:block">{meta}</p>
     </motion.div>
   );
 }
@@ -296,7 +296,7 @@ function QuickAction({ title, desc, onClick }) {
     >
       <div>
         <p className="text-sm font-semibold text-white">{title}</p>
-        <p className="mt-1 text-sm leading-5 text-sky-50">{desc}</p>
+        <p className="mt-1 hidden text-sm leading-5 text-sky-50 sm:block">{desc}</p>
       </div>
       <ArrowUpRight className="h-4 w-4 shrink-0 text-white" />
     </button>

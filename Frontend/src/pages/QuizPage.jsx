@@ -167,7 +167,7 @@ export default function QuizPage() {
                           }`}
                         >
                           <span
-                            className={`flex h-7.5 w-7.5 shrink-0 items-center justify-center rounded-full text-sm font-bold sm:h-8 sm:w-8 ${
+                            className={`flex h-[1.875rem] w-[1.875rem] shrink-0 items-center justify-center rounded-full text-sm font-bold sm:h-8 sm:w-8 ${
                               selected ? "bg-[#20b7ff] text-[#0b1628]" : "bg-[#22395a] text-sky-200"
                             }`}
                           >
@@ -215,7 +215,7 @@ export default function QuizPage() {
             <AnimatePresence>{pageError ? <div className="mt-4"><InlineMessage message={pageError} tone="error" /></div> : null}</AnimatePresence>
           </div>
 
-          <aside className="space-y-3 sm:space-y-4">
+          <aside className="hidden space-y-3 sm:space-y-4 xl:block">
             <div className="rounded-[20px] border border-slate-700/70 bg-[#142238] p-3 shadow-[0_30px_80px_-44px_rgba(2,12,27,0.95)] sm:rounded-[28px] sm:p-4">
               <SectionLabel className="bg-[#22395a] text-sky-200">Quiz Status</SectionLabel>
               <div className="mt-3 rounded-[18px] border border-slate-700 bg-[#1b2d47] p-3 sm:mt-4 sm:rounded-[22px] sm:p-4">
@@ -367,7 +367,7 @@ function ExplainWeakTopicsReview({ notesId, weakTopics }) {
 
   return (
     <div className="grid gap-2 sm:gap-2.5">
-      {weakTopics.map((topic, index) => <div key={topic} className="overflow-hidden rounded-[16px] border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900 sm:rounded-[18px]"><button onClick={() => setExpanded(expanded === index ? null : index)} className="flex w-full items-center justify-between gap-4 px-3 py-2.5 text-left sm:px-4 sm:py-3"><div className="flex items-center gap-3"><span className="flex h-7.5 w-7.5 items-center justify-center rounded-xl bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 sm:h-8 sm:w-8 sm:rounded-2xl"><Lightbulb className="h-4 w-4" /></span><span className="font-semibold text-slate-900 dark:text-white">{topic}</span></div><ChevronRight className={`h-5 w-5 text-slate-400 transition-transform ${expanded === index ? "rotate-90" : ""}`} /></button><AnimatePresence>{expanded === index ? <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="border-t border-slate-200 dark:border-slate-800"><div className="p-3 text-sm leading-6 text-slate-600 dark:text-slate-300 sm:p-3.5">{loading ? <div className="flex items-center gap-2 text-sky-700 dark:text-sky-300"><Loader2 className="h-4 w-4 animate-spin" />Preparing explanation...</div> : <Markdown>{explanations[topic] || "A more detailed explanation is still being prepared for this topic."}</Markdown>}</div></motion.div> : null}</AnimatePresence></div>)}
+      {weakTopics.map((topic, index) => <div key={topic} className="overflow-hidden rounded-[16px] border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900 sm:rounded-[18px]"><button onClick={() => setExpanded(expanded === index ? null : index)} className="flex w-full items-center justify-between gap-4 px-3 py-2.5 text-left sm:px-4 sm:py-3"><div className="flex items-center gap-3"><span className="flex h-[1.875rem] w-[1.875rem] items-center justify-center rounded-xl bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 sm:h-8 sm:w-8 sm:rounded-2xl"><Lightbulb className="h-4 w-4" /></span><span className="font-semibold text-slate-900 dark:text-white">{topic}</span></div><ChevronRight className={`h-5 w-5 text-slate-400 transition-transform ${expanded === index ? "rotate-90" : ""}`} /></button><AnimatePresence>{expanded === index ? <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="border-t border-slate-200 dark:border-slate-800"><div className="p-3 text-sm leading-6 text-slate-600 dark:text-slate-300 sm:p-3.5">{loading ? <div className="flex items-center gap-2 text-sky-700 dark:text-sky-300"><Loader2 className="h-4 w-4 animate-spin" />Preparing explanation...</div> : <Markdown>{explanations[topic] || "A more detailed explanation is still being prepared for this topic."}</Markdown>}</div></motion.div> : null}</AnimatePresence></div>)}
       {loading && !weakTopics.length ? <InlineMessage message="Loading weak-topic explanations..." tone="loading" /> : null}
       {!loading && !weakTopics.length ? <EmptyState icon={AlertCircle} compact title="No weak topics detected" description="This attempt did not flag any specific weak areas." /> : null}
     </div>

@@ -52,6 +52,7 @@ input,
 textarea,
 select {
   -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 #root {
@@ -122,5 +123,20 @@ select {
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
+  }
+}
+
+@media (max-width: 640px) {
+  body {
+    background: linear-gradient(180deg, #f8fbff 0%, #f4f7fb 100%);
+  }
+
+  .dark body {
+    background: linear-gradient(180deg, #020617 0%, #020817 100%);
+  }
+
+  button,
+  a {
+    min-width: 0;
   }
 }

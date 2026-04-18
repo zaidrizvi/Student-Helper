@@ -166,7 +166,7 @@ export default function ViewNote() {
         <PageHeader
           eyebrow="Saved note"
           title={note.fileName}
-          description="Review previous AI outputs, switch to the extracted source text, start a quiz, or create a public study guide link."
+          description="Review AI outputs, start a quiz, or share a clean study guide link."
           actions={
             <>
               <Button variant="ghost" onClick={() => navigate("/notes")}><ArrowLeft className="h-4 w-4" />Library</Button>
@@ -176,16 +176,16 @@ export default function ViewNote() {
           }
         />
 
-        <div className="flex flex-wrap gap-2.5">
-          <div className="rounded-full bg-white px-4 py-2 text-sm font-medium text-slate-600 ring-1 ring-slate-200 dark:bg-slate-950 dark:text-slate-300 dark:ring-slate-800">{getFileBadgeLabel(note.fileType, note.fileName)}</div>
-          <div className="rounded-full bg-white px-4 py-2 text-sm font-medium text-slate-600 ring-1 ring-slate-200 dark:bg-slate-950 dark:text-slate-300 dark:ring-slate-800">{formatDate(note.createdAt)}</div>
-          <div className="rounded-full bg-white px-4 py-2 text-sm font-medium text-slate-600 ring-1 ring-slate-200 dark:bg-slate-950 dark:text-slate-300 dark:ring-slate-800">{historyCount} saved AI responses</div>
+        <div className="flex flex-wrap gap-2">
+          <div className="rounded-full bg-white px-3 py-1.5 text-xs font-medium text-slate-600 ring-1 ring-slate-200 dark:bg-slate-950 dark:text-slate-300 dark:ring-slate-800 sm:px-4 sm:py-2 sm:text-sm">{getFileBadgeLabel(note.fileType, note.fileName)}</div>
+          <div className="rounded-full bg-white px-3 py-1.5 text-xs font-medium text-slate-600 ring-1 ring-slate-200 dark:bg-slate-950 dark:text-slate-300 dark:ring-slate-800 sm:px-4 sm:py-2 sm:text-sm">{formatDate(note.createdAt)}</div>
+          <div className="rounded-full bg-white px-3 py-1.5 text-xs font-medium text-slate-600 ring-1 ring-slate-200 dark:bg-slate-950 dark:text-slate-300 dark:ring-slate-800 sm:px-4 sm:py-2 sm:text-sm">{historyCount} AI responses</div>
         </div>
       </section>
 
       <section className="mt-6 grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-6">
-          <Panel className="p-3 sm:p-4">
+          <Panel className="p-2.5 sm:p-4">
             <div className="grid grid-cols-1 gap-2 sm:flex sm:flex-wrap">
               {[{ id: "ai", label: "AI history", icon: Bot }, { id: "original", label: "Extracted text", icon: Search }].map((tab) => {
                 const Icon = tab.icon;
@@ -207,7 +207,7 @@ export default function ViewNote() {
                     <div><SectionLabel>Extracted source text</SectionLabel><p className="mt-2 text-sm leading-7 text-slate-500 dark:text-slate-400">This is the raw text extracted from the uploaded material. The public share page does not expose this content.</p></div>
                     <Button variant="secondary" onClick={handleDownloadPdf} disabled={isDownloadingPdf}>{isDownloadingPdf ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}PDF</Button>
                   </div>
-                  <div className="rounded-[28px] bg-slate-50 p-5 text-sm leading-7 text-slate-600 dark:bg-slate-900 dark:text-slate-300">
+                  <div className="rounded-[18px] bg-slate-50 p-3 text-sm leading-7 text-slate-600 dark:bg-slate-900 dark:text-slate-300 sm:rounded-[28px] sm:p-5">
                     <p className="whitespace-pre-wrap">{note.extractedText || "No text extracted from this file."}</p>
                   </div>
                 </Panel>
@@ -219,7 +219,7 @@ export default function ViewNote() {
         <div className="space-y-6">
           <Panel className="p-4 sm:p-6">
             <SectionLabel>Share and export</SectionLabel>
-            <h2 className="mt-3 font-display text-2xl font-bold text-slate-950 dark:text-white">Public study guide link</h2>
+            <h2 className="mt-3 font-display text-xl font-bold text-slate-950 dark:text-white sm:text-2xl">Public study guide link</h2>
             <p className="mt-2 text-sm leading-7 text-slate-500 dark:text-slate-400">Share the AI study guide without exposing the extracted raw source text.</p>
             <div className="mt-5 grid gap-3">
               <Button onClick={handleShare}><Share2 className="h-4 w-4" />Create share link</Button>
@@ -228,7 +228,7 @@ export default function ViewNote() {
             {note.share?.expiresAt ? <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">Current share link expires on {formatDateTime(note.share.expiresAt)}.</p> : null}
           </Panel>
 
-          <Panel className="p-4 sm:p-6">
+          <Panel className="hidden p-4 sm:block sm:p-6">
             <SectionLabel>Latest snapshot</SectionLabel>
             <h2 className="mt-3 font-display text-2xl font-bold text-slate-950 dark:text-white">Most recent AI output</h2>
             {latestEntry ? <div className="mt-4 space-y-3"><div className="rounded-[24px] bg-slate-50 p-4 dark:bg-slate-900"><p className="text-xs uppercase tracking-[0.18em] text-slate-400">Created</p><p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{formatDate(latestEntry.createdAt)}</p></div><div className="rounded-[24px] bg-slate-50 p-4 dark:bg-slate-900"><p className="text-xs uppercase tracking-[0.18em] text-slate-400">Prompt</p><p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{!latestEntry.prompt || latestEntry.prompt === "(No custom prompt)" ? "Standard summary" : latestEntry.prompt}</p></div></div> : <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">No AI output saved yet.</p>}

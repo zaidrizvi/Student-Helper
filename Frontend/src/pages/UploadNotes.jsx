@@ -290,30 +290,39 @@ export default function UploadNotes() {
   if (!isAuthenticated) return null;
 
   return (
-    <div className="min-h-screen w-full bg-[#F8FAFC] pt-20 text-slate-800 dark:bg-[#0B0F17] dark:text-slate-100 md:pt-22">
-      <div className="mx-auto flex max-w-[1420px] flex-col gap-3 px-3 pb-4 sm:gap-4 sm:px-4 md:px-6 md:pb-5">
+    <div className="min-h-screen w-full bg-[#F8FAFC] pt-[4.5rem] text-slate-800 dark:bg-[#0B0F17] dark:text-slate-100 md:pt-[5.5rem]">
+      <div className="mx-auto flex max-w-[1420px] flex-col gap-3 px-3 pb-24 sm:gap-4 sm:px-4 sm:pb-5 md:px-6 md:pb-5">
         <main className="flex min-h-[calc(100vh-8.5rem)] flex-col gap-3 sm:gap-4 lg:flex-row">
           <motion.div
-            className={`flex min-h-0 flex-1 flex-col overflow-y-auto rounded-[18px] border border-slate-200 bg-white shadow-sm custom-scrollbar dark:border-slate-800 dark:bg-[#0D1320] sm:rounded-[22px] lg:max-w-[340px] lg:self-start xl:max-w-[360px] ${
+            className={`flex min-h-0 flex-1 flex-col rounded-[16px] border border-slate-200 bg-white shadow-sm custom-scrollbar dark:border-slate-800 dark:bg-[#0D1320] sm:rounded-[22px] lg:max-w-[340px] lg:self-start lg:overflow-y-auto xl:max-w-[360px] ${
               isFocused ? "pointer-events-none opacity-0 lg:-ml-[480px]" : "opacity-100"
             }`}
           >
             <div className="space-y-3 p-3 sm:space-y-3.5 sm:p-3.5 lg:p-4">
-              <div className="space-y-1.5 sm:space-y-2">
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white">New Analysis</h2>
-                <p className="text-sm text-slate-500 dark:text-slate-400">
-                  {inputMode === "ask"
-                    ? "Ask a direct question and get a tutor-style answer."
-                    : "Configure your study material below."}
-                </p>
+              <div className="flex items-start justify-between gap-3">
+                <div className="space-y-1 sm:space-y-2">
+                  <h2 className="text-lg font-bold text-slate-900 dark:text-white">New Analysis</h2>
+                  <p className="hidden text-sm text-slate-500 dark:text-slate-400 sm:block">
+                    {inputMode === "ask"
+                      ? "Ask a direct question and get a tutor-style answer."
+                      : "Configure your study material below."}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowHistory(true)}
+                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-500 transition-colors hover:border-sky-300 hover:text-sky-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
+                  aria-label="Open note history"
+                >
+                  <History className="h-4 w-4" />
+                </button>
               </div>
 
               <div className="space-y-3">
-                <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
+                <label className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400 sm:text-xs sm:tracking-[0.22em]">
                   <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-[10px] dark:bg-slate-800">1</span>
                   Choose Workflow
                 </label>
-                <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2 sm:gap-2">
+                <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
                   {INPUT_MODES.map((entry) => {
                     const Icon = entry.icon;
                     const active = inputMode === entry.value;
@@ -321,7 +330,7 @@ export default function UploadNotes() {
                       <button
                         key={entry.value}
                         onClick={() => setInputMode(entry.value)}
-                        className={`rounded-[14px] border p-2 text-left transition-all sm:rounded-[18px] sm:p-2.5 ${
+                        className={`min-h-[82px] rounded-[14px] border p-2 text-left transition-all sm:min-h-0 sm:rounded-[18px] sm:p-2.5 ${
                           active
                             ? "border-sky-500 bg-slate-900 text-white dark:bg-sky-600 dark:border-sky-500"
                             : "border-slate-200 bg-slate-50 hover:border-sky-300 hover:bg-white dark:border-slate-800 dark:bg-slate-900 dark:hover:border-sky-700"
@@ -331,8 +340,8 @@ export default function UploadNotes() {
                           <Icon className={`h-4 w-4 ${active ? "text-sky-200" : "text-slate-400"}`} />
                           {active ? <div className="h-2 w-2 rounded-full bg-emerald-400" /> : null}
                         </div>
-                        <div className={`text-sm font-semibold ${active ? "text-white" : "text-slate-900 dark:text-slate-200"}`}>{entry.label}</div>
-                        <div className={`mt-0.5 text-xs leading-5 sm:mt-1 ${active ? "text-slate-200" : "text-slate-500 dark:text-slate-400"}`}>{entry.desc}</div>
+                        <div className={`text-sm font-semibold leading-tight ${active ? "text-white" : "text-slate-900 dark:text-slate-200"}`}>{entry.label}</div>
+                        <div className={`mt-0.5 hidden text-xs leading-5 sm:mt-1 sm:block ${active ? "text-slate-200" : "text-slate-500 dark:text-slate-400"}`}>{entry.desc}</div>
                       </button>
                     );
                   })}
@@ -341,7 +350,7 @@ export default function UploadNotes() {
 
               {inputMode === "notes" ? <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
+                  <label className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400 sm:text-xs sm:tracking-[0.22em]">
                     <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-[10px] dark:bg-slate-800">2</span>
                     Upload Material
                   </label>
@@ -363,7 +372,7 @@ export default function UploadNotes() {
                     setIsDragging(false);
                     handleFile(e);
                   }}
-                  className={`group relative min-h-[92px] rounded-[16px] border-2 border-dashed p-2.5 text-center transition-all sm:min-h-[104px] sm:rounded-[20px] sm:p-3 ${
+                  className={`group relative min-h-[84px] rounded-[16px] border-2 border-dashed p-2.5 text-center transition-all sm:min-h-[104px] sm:rounded-[20px] sm:p-3 ${
                     inputMode === "ask" ? "opacity-60" : ""
                   } ${
                     isDragging
@@ -390,7 +399,7 @@ export default function UploadNotes() {
                       <div className="min-w-0 flex-1 text-left">
                         <h3 className="truncate text-sm font-semibold text-slate-900 dark:text-white">{file.name}</h3>
                         <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                          {(file.size / 1024 / 1024).toFixed(2)} MB • Ready to analyze
+                          {(file.size / 1024 / 1024).toFixed(2)} MB - Ready to analyze
                         </p>
                       </div>
                       <Check className="h-5 w-5 text-sky-500" />
@@ -400,10 +409,10 @@ export default function UploadNotes() {
                       <div className="mb-2 flex h-9 w-9 items-center justify-center rounded-full bg-slate-900 text-sky-400 transition-transform group-hover:scale-105 dark:bg-slate-800 sm:mb-2.5 sm:h-10 sm:w-10">
                         <UploadCloud className="h-4.5 w-4.5 sm:h-5 sm:w-5" />
                       </div>
-                      <p className="text-base font-semibold tracking-tight text-slate-900 dark:text-white sm:text-[1.05rem]">
+                      <p className="text-sm font-semibold tracking-tight text-slate-900 dark:text-white sm:text-[1.05rem]">
                         {inputMode === "ask" ? "Optional in Ask AI mode" : "Drop your file here or click to browse"}
                       </p>
-                      <p className="mt-1 max-w-sm text-sm leading-5 text-slate-500 dark:text-slate-400 sm:mt-1.5 sm:leading-6">
+                      <p className="mt-1 hidden max-w-sm text-sm leading-5 text-slate-500 dark:text-slate-400 sm:mt-1.5 sm:block sm:leading-6">
                         {inputMode === "ask"
                           ? "You can skip file upload and ask a direct question below."
                           : "PDF, DOCX, TXT, JPG, PNG, and WEBP up to 15MB."}
@@ -414,16 +423,16 @@ export default function UploadNotes() {
               </div> : null}
 
               <div className="space-y-3">
-                <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
+                <label className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400 sm:text-xs sm:tracking-[0.22em]">
                   <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-[10px] dark:bg-slate-800">{inputMode === "ask" ? "2" : "3"}</span>
                   Learning Mode
                 </label>
-                <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2 sm:gap-2">
+                <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
                   {MODES.map((m) => (
                     <button
                       key={m.value}
                       onClick={() => setMode(m.value)}
-                      className={`rounded-[14px] border p-2 text-left transition-all sm:rounded-[18px] sm:p-2.5 ${
+                      className={`min-h-[82px] rounded-[14px] border p-2 text-left transition-all sm:min-h-0 sm:rounded-[18px] sm:p-2.5 ${
                         mode === m.value
                           ? "border-sky-500 bg-slate-900 text-white dark:bg-sky-600 dark:border-sky-500"
                           : "border-slate-200 bg-slate-50 hover:border-sky-300 hover:bg-white dark:border-slate-800 dark:bg-slate-900 dark:hover:border-sky-700"
@@ -433,15 +442,15 @@ export default function UploadNotes() {
                         <m.icon className={`h-4 w-4 ${mode === m.value ? "text-sky-200" : "text-slate-400"}`} />
                         {mode === m.value ? <div className="h-2 w-2 rounded-full bg-emerald-400" /> : null}
                       </div>
-                      <div className={`text-sm font-semibold ${mode === m.value ? "text-white" : "text-slate-900 dark:text-slate-200"}`}>{m.label}</div>
-                      <div className={`mt-0.5 text-xs leading-5 sm:mt-1 ${mode === m.value ? "text-slate-200" : "text-slate-500 dark:text-slate-400"}`}>{m.desc}</div>
+                      <div className={`text-sm font-semibold leading-tight ${mode === m.value ? "text-white" : "text-slate-900 dark:text-slate-200"}`}>{m.label}</div>
+                      <div className={`mt-0.5 hidden text-xs leading-5 sm:mt-1 sm:block ${mode === m.value ? "text-slate-200" : "text-slate-500 dark:text-slate-400"}`}>{m.desc}</div>
                     </button>
                   ))}
                 </div>
               </div>
 
               <div className="space-y-3">
-                <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
+                <label className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400 sm:text-xs sm:tracking-[0.22em]">
                   <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-[10px] dark:bg-slate-800">{inputMode === "ask" ? "3" : "4"}</span>
                   {inputMode === "ask" ? "Ask Anything" : "Custom Instructions"}
                 </label>
@@ -454,7 +463,7 @@ export default function UploadNotes() {
                         ? "E.g. Explain tautology in depth, compare TCP vs UDP, teach recursion from scratch..."
                         : "E.g. Explain the formulas step by step, focus on likely exam questions..."
                     }
-                    className="min-h-[78px] w-full resize-none rounded-[18px] border border-slate-200 bg-slate-50 p-3 pr-12 text-sm text-slate-800 outline-none transition-all placeholder:text-slate-400 focus:border-sky-400 focus:bg-white dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-sky-600 dark:focus:bg-slate-900 sm:min-h-[86px] sm:rounded-[22px] sm:p-3.5"
+                    className="min-h-[72px] w-full resize-none rounded-[16px] border border-slate-200 bg-slate-50 p-3 pr-12 text-sm text-slate-800 outline-none transition-all placeholder:text-slate-400 focus:border-sky-400 focus:bg-white dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-sky-600 dark:focus:bg-slate-900 sm:min-h-[86px] sm:rounded-[22px] sm:p-3.5"
                   />
                   <Settings2 className="pointer-events-none absolute bottom-4 right-4 h-4 w-4 text-slate-300 dark:text-slate-600" />
                 </div>
@@ -496,17 +505,17 @@ export default function UploadNotes() {
           <motion.div
             id="output-panel"
             layout
-            className={`flex min-h-0 flex-1 flex-col rounded-[26px] border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-[#0D1320] ${
+            className={`flex min-h-[360px] flex-1 flex-col rounded-[18px] border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-[#0D1320] sm:rounded-[26px] lg:min-h-0 ${
               isFocused ? "fixed inset-x-4 bottom-4 top-24 z-40 md:inset-x-6" : ""
             }`}
           >
-            <div className="flex flex-col gap-3 border-b border-slate-100 px-4 py-4 dark:border-slate-800 md:px-6 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-col gap-3 border-b border-slate-100 px-3 py-3 dark:border-slate-800 sm:px-4 sm:py-4 md:px-6 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex min-w-0 items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-sky-50 text-sky-600 dark:bg-sky-950/40 dark:text-sky-300">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-50 text-sky-600 dark:bg-sky-950/40 dark:text-sky-300 sm:h-11 sm:w-11 sm:rounded-2xl">
                   <BrainCircuit className="h-5 w-5" />
                 </div>
                 <div className="min-w-0">
-                  <h2 className="text-[1.35rem] font-bold tracking-tight text-slate-900 dark:text-white sm:text-[1.55rem]">Analysis workspace</h2>
+                  <h2 className="text-[1.15rem] font-bold tracking-tight text-slate-900 dark:text-white sm:text-[1.55rem]">Analysis workspace</h2>
                 </div>
               </div>
 
@@ -542,14 +551,14 @@ export default function UploadNotes() {
               </div>
             </div>
 
-            <div ref={summaryRef} className="custom-scrollbar flex-1 overflow-y-auto p-4 sm:p-5 md:p-7">
+            <div ref={summaryRef} className="custom-scrollbar flex-1 overflow-y-auto p-3 sm:p-5 md:p-7">
               {!hasStarted && !loading && !geminiOutput ? (
                 <div className="flex h-full flex-col items-center justify-center text-center">
                   <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-3xl bg-slate-100 text-slate-300 dark:bg-slate-900 dark:text-slate-600">
                     <Sparkles className="h-7 w-7" />
                   </div>
-                  <h3 className="text-[1.5rem] font-bold tracking-tight text-slate-900 dark:text-white sm:text-[1.8rem]">Your study guide will appear here</h3>
-                  <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-500 dark:text-slate-400 md:text-base">
+                  <h3 className="text-[1.25rem] font-bold tracking-tight text-slate-900 dark:text-white sm:text-[1.8rem]">Your study guide will appear here</h3>
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400 md:text-base md:leading-7">
                     {inputMode === "ask"
                       ? "Ask a direct question and get a clear AI explanation here."
                       : "Upload a file, choose a learning depth, and generate a structured study guide with clear next steps."}
@@ -595,7 +604,7 @@ export default function UploadNotes() {
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     whileInView={{ opacity: 1, y: 0 }}
-                    className="mt-12 rounded-3xl bg-gradient-to-r from-sky-600 to-cyan-600 p-6 text-white shadow-lg"
+                    className="mt-8 rounded-[18px] bg-gradient-to-r from-sky-600 to-cyan-600 p-4 text-white shadow-lg sm:mt-12 sm:rounded-3xl sm:p-6"
                   >
                     <div className="flex flex-col items-start justify-between gap-5 md:flex-row md:items-center">
                       <div>

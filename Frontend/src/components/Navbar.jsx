@@ -60,10 +60,10 @@ export default function Navbar() {
 
   return (
     <>
-      <header className="fixed inset-x-0 top-0 z-50 border-b border-white/75 bg-white/78 px-3 py-2.5 shadow-[0_20px_60px_-42px_rgba(15,23,42,0.45)] backdrop-blur-xl dark:border-slate-800/90 dark:bg-slate-950/80 sm:px-6 sm:py-3 lg:px-8">
-        <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-3 px-0 sm:h-16">
+      <header className="fixed inset-x-0 top-0 z-50 border-b border-white/75 bg-white/90 px-3 py-2 shadow-[0_14px_42px_-34px_rgba(15,23,42,0.45)] backdrop-blur-xl dark:border-slate-800/90 dark:bg-slate-950/88 sm:px-6 sm:py-3 lg:px-8">
+        <div className="mx-auto flex h-12 max-w-7xl items-center justify-between gap-3 px-0 sm:h-16">
           <Link to={isAuthenticated ? "/dashboard" : "/home"} className="flex min-w-0 items-center gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-3xl bg-sky-600 text-white shadow-[0_16px_34px_-18px_rgba(2,132,199,0.7)] sm:h-11 sm:w-11">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-sky-600 text-white shadow-[0_16px_34px_-18px_rgba(2,132,199,0.7)] sm:h-11 sm:w-11 sm:rounded-3xl">
               <BrainCircuit className="h-5 w-5" />
             </span>
             <span className="min-w-0">
@@ -153,14 +153,14 @@ export default function Navbar() {
           <div className="flex shrink-0 items-center gap-2 md:hidden">
             <button
               onClick={() => setIsDark((current) => !current)}
-              className="flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white/90 text-slate-500 dark:border-slate-800 dark:bg-slate-950/85 dark:text-slate-300"
+              className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white/90 text-slate-500 dark:border-slate-800 dark:bg-slate-950/85 dark:text-slate-300"
               aria-label="Toggle color theme"
             >
               {isDark ? <Sun className="h-5 w-5 text-amber-400" /> : <MoonStar className="h-5 w-5 text-sky-600" />}
             </button>
             <button
               onClick={() => setIsMobileMenuOpen((current) => !current)}
-              className="flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white/90 text-slate-700 dark:border-slate-800 dark:bg-slate-950/85 dark:text-slate-100"
+              className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white/90 text-slate-700 dark:border-slate-800 dark:bg-slate-950/85 dark:text-slate-100"
               aria-label="Open navigation"
             >
               {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -183,11 +183,11 @@ export default function Navbar() {
               initial={{ opacity: 0, y: -12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
-              className="fixed inset-x-3 top-20 z-50 max-h-[calc(100vh-5.5rem)] overflow-y-auto rounded-[28px] border border-white/80 bg-white/94 p-4 shadow-[0_32px_80px_-48px_rgba(15,23,42,0.65)] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/96 md:hidden sm:inset-x-4 sm:top-24 sm:p-5"
+              className="fixed inset-x-3 top-16 z-50 max-h-[calc(100vh-9rem)] overflow-y-auto rounded-[20px] border border-white/80 bg-white/96 p-3 shadow-[0_24px_70px_-46px_rgba(15,23,42,0.65)] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/96 md:hidden sm:inset-x-4 sm:top-24 sm:p-5"
             >
               {isAuthenticated ? (
-                <div className="mb-5 rounded-3xl bg-slate-50 p-4 dark:bg-slate-900">
-                  <p className="text-sm font-semibold text-slate-900 dark:text-white">{user?.name}</p>
+                <div className="mb-3 rounded-2xl bg-slate-50 p-3 dark:bg-slate-900 sm:mb-5 sm:p-4">
+                  <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">{user?.name}</p>
                   <p className="text-xs text-slate-500 dark:text-slate-400">{user?.email}</p>
                 </div>
               ) : null}
@@ -241,6 +241,30 @@ export default function Navbar() {
           </>
         ) : null}
       </AnimatePresence>
+
+      {isAuthenticated ? (
+        <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-slate-200/80 bg-white/94 px-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 shadow-[0_-18px_50px_-36px_rgba(15,23,42,0.6)] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/94 md:hidden">
+          <div className="mx-auto grid max-w-md grid-cols-3 gap-1.5">
+            {privateLinks.map(({ label, to, icon: Icon }) => (
+              <NavLink
+                key={to}
+                to={to}
+                className={({ isActive }) =>
+                  cn(
+                    "flex min-h-14 flex-col items-center justify-center gap-1 rounded-2xl px-2 text-[11px] font-semibold transition-colors",
+                    isActive
+                      ? "bg-sky-50 text-sky-700 dark:bg-sky-950/45 dark:text-sky-300"
+                      : "text-slate-500 dark:text-slate-400"
+                  )
+                }
+              >
+                <Icon className="h-5 w-5" />
+                <span>{label}</span>
+              </NavLink>
+            ))}
+          </div>
+        </nav>
+      ) : null}
     </>
   );
 }
