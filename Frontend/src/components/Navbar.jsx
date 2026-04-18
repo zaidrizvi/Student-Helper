@@ -245,7 +245,10 @@ export default function Navbar() {
       </AnimatePresence>
 
       {isAuthenticated ? (
-        <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-slate-200/80 bg-white/94 px-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 shadow-[0_-18px_50px_-36px_rgba(15,23,42,0.6)] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/94 md:hidden">
+        <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-slate-200/80 bg-white/94 px-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-1.5 shadow-[0_-18px_50px_-36px_rgba(15,23,42,0.6)] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/94 md:hidden">
+          <p className="pb-1 text-center text-[10px] font-medium text-slate-400 dark:text-slate-500">
+            StudyAI by Zaid Rizvi
+          </p>
           <div className="mx-auto grid max-w-md grid-cols-3 gap-1.5">
             {mobilePrivateLinks.map(({ label, mobileLabel, to, icon: Icon }) => (
               <NavLink
