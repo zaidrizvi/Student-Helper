@@ -40,10 +40,10 @@ const ALLOWED_TYPES = [
 ];
 
 const MODES = [
-  { label: "Quick Recap", value: "short", desc: "Key takeaways & highlights", icon: Zap },
-  { label: "Standard", value: "normal", desc: "Balanced explanation", icon: Layers },
-  { label: "Deep Dive", value: "detailed", desc: "In-depth comprehensive study", icon: BookOpen },
-  { label: "Exam Prep", value: "ultra", desc: "Questions, answers & tips", icon: Search },
+  { label: "Fast Revision", value: "short", desc: "Only key ideas, definitions, and quick recall points", icon: Zap },
+  { label: "Simple Explain", value: "normal", desc: "Plain-language tutor style with short examples", icon: Layers },
+  { label: "Full Breakdown", value: "detailed", desc: "Detailed sections, terms, and concept connections", icon: BookOpen },
+  { label: "Exam Focus", value: "ultra", desc: "Exam-focused concepts, flow, confusions, and reminders", icon: Search },
 ];
 
 const INPUT_MODES = [

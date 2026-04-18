@@ -24,8 +24,10 @@ const publicLinks = [
 const privateLinks = [
   { label: "Dashboard", to: "/dashboard", icon: LayoutDashboard },
   { label: "Library", to: "/notes", icon: Library },
-  { label: "Upload", to: "/upload-notes", icon: PlusCircle },
+  { label: "Upload", mobileLabel: "Ask AI", to: "/upload-notes", icon: PlusCircle },
 ];
+
+const mobilePrivateLinks = [privateLinks[0], privateLinks[2], privateLinks[1]];
 
 export default function Navbar() {
   const { user, isAuthenticated, logout } = useAuth();
@@ -245,7 +247,7 @@ export default function Navbar() {
       {isAuthenticated ? (
         <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-slate-200/80 bg-white/94 px-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 shadow-[0_-18px_50px_-36px_rgba(15,23,42,0.6)] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/94 md:hidden">
           <div className="mx-auto grid max-w-md grid-cols-3 gap-1.5">
-            {privateLinks.map(({ label, to, icon: Icon }) => (
+            {mobilePrivateLinks.map(({ label, mobileLabel, to, icon: Icon }) => (
               <NavLink
                 key={to}
                 to={to}
@@ -259,7 +261,7 @@ export default function Navbar() {
                 }
               >
                 <Icon className="h-5 w-5" />
-                <span>{label}</span>
+                <span>{mobileLabel || label}</span>
               </NavLink>
             ))}
           </div>
